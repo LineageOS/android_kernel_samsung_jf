@@ -3668,7 +3668,7 @@ static void cfq_exit_queue(struct elevator_queue *e)
 	kfree(cfqd);
 }
 
-static void *cfq_init_queue(struct request_queue *q)
+static int cfq_init_queue(struct request_queue *q)
 {
 	struct cfq_data *cfqd;
 	int i, j;
@@ -3677,7 +3677,7 @@ static void *cfq_init_queue(struct request_queue *q)
 
 	cfqd = kmalloc_node(sizeof(*cfqd), GFP_KERNEL | __GFP_ZERO, q->node);
 	if (!cfqd)
-		return NULL;
+		return -ENOMEM;
 
 	/* Init root service tree */
 	cfqd->grp_service_tree = CFQ_RB_ROOT;
@@ -3704,7 +3704,7 @@ static void *cfq_init_queue(struct request_queue *q)
 	if (blkio_alloc_blkg_stats(&cfqg->blkg)) {
 		kfree(cfqg);
 		kfree(cfqd);
-		return NULL;
+		return -ENOMEM;
 	}
 
 	rcu_read_lock();
@@ -3735,6 +3735,7 @@ static void *cfq_init_queue(struct request_queue *q)
 	cfq_link_cfqq_cfqg(&cfqd->oom_cfqq, &cfqd->root_group);
 
 	cfqd->queue = q;
+	q->elevator->elevator_data = cfqd;
 
 	init_timer(&cfqd->idle_slice_timer);
 	cfqd->idle_slice_timer.function = cfq_idle_slice_timer;
@@ -3760,7 +3761,7 @@ static void *cfq_init_queue(struct request_queue *q)
 	 * second, in order to have larger depth for async operations.
 	 */
 	cfqd->last_delayed_sync = jiffies - HZ;
-	return cfqd;
+	return 0;
 }
 
 /*
