@@ -824,7 +824,7 @@ retry:
 			 */
 			if (!ioc && !retried) {
 				spin_unlock_irq(q->queue_lock);
-				create_io_context(current, gfp_mask, q->node);
+				create_io_context(gfp_mask, q->node);
 				spin_lock_irq(q->queue_lock);
 				retried = true;
 				goto retry;
@@ -889,7 +889,9 @@ retry:
 
 	/* create icq if missing */
 	if ((rw_flags & REQ_ELVPRIV) && unlikely(et->icq_cache && !icq)) {
-		icq = ioc_create_icq(q, gfp_mask);
+		ioc = create_io_context(gfp_mask, q->node);
+		if (ioc)
+			icq = ioc_create_icq(ioc, q, gfp_mask);
 		if (!icq)
 			goto fail_icq;
 	}
@@ -977,7 +979,7 @@ static struct request *get_request_wait(struct request_queue *q, int rw_flags,
 		 * up to a big batch of them for a small period time.
 		 * See ioc_batching, ioc_set_batching
 		 */
-		create_io_context(current, GFP_NOIO, q->node);
+		create_io_context(GFP_NOIO, q->node);
 		ioc_set_batching(q, current->io_context);
 
 		spin_lock_irq(q->queue_lock);
