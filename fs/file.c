@@ -255,19 +255,6 @@ int expand_files(struct files_struct *files, int nr)
 
 	fdt = files_fdtable(files);
 
-	/*
-	 * N.B. For clone tasks sharing a files structure, this test
-	 * will limit the total number of files that can be opened.
-	 */
-
-	if (nr >= rlimit(RLIMIT_NOFILE))
-	{
-		pr_err("[expand_files] NR : %d, RLIMIT : %lu, PID : %d, Process Name : %s\n",
-				nr, rlimit(RLIMIT_NOFILE), current->pid, current->comm);
-
-		return -EMFILE;
-	}
-
 	/* Do we need to expand? */
 	if (nr < fdt->max_fds)
 		return 0;
@@ -444,6 +431,7 @@ int alloc_fd(unsigned start, unsigned flags)
 {
 	struct files_struct *files = current->files;
 	unsigned int fd;
+	unsigned end = rlimit(RLIMIT_NOFILE);
 	int error;
 	struct fdtable *fdt;
 
@@ -456,6 +444,14 @@ repeat:
 
 	if (fd < fdt->max_fds)
 		fd = find_next_zero_bit(fdt->open_fds, fdt->max_fds, fd);
+
+	/*
+	 * N.B. For clone tasks sharing a files structure, this test
+	 * will limit the total number of files that can be opened.
+	 */
+	error = -EMFILE;
+	if (fd >= end)
+		goto out;
 
 	error = expand_files(files, fd);
 	if (error < 0)
