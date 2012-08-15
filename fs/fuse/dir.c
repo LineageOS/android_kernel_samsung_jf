@@ -429,6 +429,9 @@ static int fuse_create_open(struct inode *dir, struct dentry *entry,
 	struct file *file;
 	int flags = nd->intent.open.flags;
 
+	/* Userspace expects S_IFREG in create mode */
+	BUG_ON((mode & S_IFMT) != S_IFREG);
+
 	if (fc->no_create)
 		return -ENOSYS;
 
