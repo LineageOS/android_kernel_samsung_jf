@@ -21,6 +21,7 @@
 #include <linux/ftrace_event.h>
 #include <linux/init.h>
 #include <linux/kallsyms.h>
+#include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/sysfs.h>
 #include <linux/kernel.h>
@@ -2610,40 +2611,95 @@ static inline void kmemleak_load_module(const struct module *mod,
 }
 #endif
 
+/* Sanity checks against invalid binaries, wrong arch, weird elf version. */
+static int check_info(struct load_info *info)
+{
+	if (info->len < sizeof(*(info->hdr)))
+		return -ENOEXEC;
+
+	if (memcmp(info->hdr->e_ident, ELFMAG, SELFMAG) != 0
+	    || info->hdr->e_type != ET_REL
+	    || !elf_check_arch(info->hdr)
+	    || info->hdr->e_shentsize != sizeof(Elf_Shdr))
+		return -ENOEXEC;
+
+	if (info->hdr->e_shoff >= info->len
+	    || (info->hdr->e_shnum * sizeof(Elf_Shdr) >
+		info->len - info->hdr->e_shoff))
+		return -ENOEXEC;
+
+	return 0;
+}
+
 /* Sets info->hdr and info->len. */
-static int copy_and_check(struct load_info *info,
-			  const void __user *umod, unsigned long len,
-			  const char __user *uargs)
+int copy_module_from_user(const void __user *umod, unsigned long len,
+			  struct load_info *info)
 {
 	int err;
-	Elf_Ehdr *hdr;
 
-	if (len < sizeof(*hdr))
+	info->len = len;
+	if (info->len < sizeof(*(info->hdr)))
 		return -ENOEXEC;
 
 	/* Suck in entire file: we'll want most of it. */
-	if ((hdr = vmalloc(len)) == NULL)
+	info->hdr = vmalloc(info->len);
+	if (!info->hdr)
 		return -ENOMEM;
 
-	if (copy_from_user(hdr, umod, len) != 0) {
-		err = -EFAULT;
+	err = copy_from_user(info->hdr, umod, info->len);
+	if (err)
 		goto free_hdr;
+
+	err = check_info(info);
+	if (err)
+		goto free_hdr;
+
+	return err;
+
+free_hdr:
+	vfree(info->hdr);
+	return err;
+}
+
+/* Sets info->hdr and info->len. */
+int copy_module_from_fd(int fd, struct load_info *info)
+{
+	struct file *file;
+	int err;
+	struct kstat stat;
+	unsigned long size;
+	off_t pos;
+	ssize_t bytes = 0;
+
+	file = fget(fd);
+	if (!file)
+		return -ENOEXEC;
+
+	err = vfs_getattr(file->f_vfsmnt, file->f_dentry, &stat);
+	if (err)
+		goto out;
+
+	size = stat.size;
+	info->hdr = vmalloc(size);
+	if (!info->hdr) {
+		err = -ENOMEM;
+		goto out;
 	}
 
-	/* Sanity checks against insmoding binaries or wrong arch,
-	   weird elf version */
-	if (memcmp(hdr->e_ident, ELFMAG, SELFMAG) != 0
-	    || hdr->e_type != ET_REL
-	    || !elf_check_arch(hdr)
-	    || hdr->e_shentsize != sizeof(Elf_Shdr)) {
-		err = -ENOEXEC;
-		goto free_hdr;
+	pos = 0;
+	while (pos < size) {
+		bytes = kernel_read(file, pos, (char *)(info->hdr) + pos,
+				    size - pos);
+		if (bytes < 0) {
+			vfree(info->hdr);
+			err = bytes;
+			goto out;
+		}
+		if (bytes == 0)
+			break;
+		pos += bytes;
 	}
-
-	if (len < hdr->e_shoff + hdr->e_shnum * sizeof(Elf_Shdr)) {
-		err = -ENOEXEC;
-		goto free_hdr;
-	}
+	info->len = pos;
 
 #ifdef TIMA_LKM_AUTH_ENABLED
 //	if (len > 500000) {
@@ -2655,12 +2711,12 @@ static int copy_and_check(struct load_info *info,
 	}
 #endif
 
-	info->hdr = hdr;
-	info->len = len;
-	return 0;
+	err = check_info(info);
+	if (err)
+		vfree(info->hdr);
 
-free_hdr:
-	vfree(hdr);
+out:
+	fput(file);
 	return err;
 }
 
@@ -3085,26 +3141,17 @@ static int post_relocation(struct module *mod, const struct load_info *info)
 	return module_finalize(info->hdr, info->sechdrs, mod);
 }
 
+static int do_init_module(struct module *mod);
+
 /* Allocate and load the module: note that size of section 0 is always
    zero, and we rely on this for optional sections. */
-static struct module *load_module(void __user *umod,
-				  unsigned long len,
-				  const char __user *uargs)
+static int load_module(struct load_info *info, const char __user *uargs)
 {
-	struct load_info info = { NULL, };
 	struct module *mod;
 	long err;
 
-	pr_debug("load_module: umod=%p, len=%lu, uargs=%p\n",
-	       umod, len, uargs);
-
-	/* Copy in the blobs from userspace, check they are vaguely sane. */
-	err = copy_and_check(&info, umod, len, uargs);
-	if (err)
-		return ERR_PTR(err);
-
 	/* Figure out module layout, and allocate all the memory. */
-	mod = layout_and_allocate(&info);
+	mod = layout_and_allocate(info);
 	if (IS_ERR(mod)) {
 		err = PTR_ERR(mod);
 		goto free_copy;
@@ -3117,25 +3164,25 @@ static struct module *load_module(void __user *umod,
 
 	/* Now we've got everything in the final locations, we can
 	 * find optional sections. */
-	find_module_sections(mod, &info);
+	find_module_sections(mod, info);
 
 	err = check_module_license_and_versions(mod);
 	if (err)
 		goto free_unload;
 
 	/* Set up MODINFO_ATTR fields */
-	setup_modinfo(mod, &info);
+	setup_modinfo(mod, info);
 
 	/* Fix up syms, so that st_value is a pointer to location. */
-	err = simplify_symbols(mod, &info);
+	err = simplify_symbols(mod, info);
 	if (err < 0)
 		goto free_modinfo;
 
-	err = apply_relocations(mod, &info);
+	err = apply_relocations(mod, info);
 	if (err < 0)
 		goto free_modinfo;
 
-	err = post_relocation(mod, &info);
+	err = post_relocation(mod, info);
 	if (err < 0)
 		goto free_modinfo;
 
@@ -3165,7 +3212,7 @@ static struct module *load_module(void __user *umod,
 	}
 
 	/* This has to be done once we're sure module name is unique. */
-	dynamic_debug_setup(info.debug, info.num_debug);
+	dynamic_debug_setup(info->debug, info->num_debug);
 
 	/* Ftrace init must be called in the MODULE_STATE_UNFORMED state */
 	ftrace_module_init(mod);
@@ -3175,7 +3222,7 @@ static struct module *load_module(void __user *umod,
 	if (err < 0)
 		goto ddebug;
 
-	module_bug_finalize(info.hdr, info.sechdrs, mod);
+	module_bug_finalize(info->hdr, info->sechdrs, mod);
 	list_add_rcu(&mod->list, &modules);
 	mutex_unlock(&module_mutex);
 
@@ -3186,16 +3233,17 @@ static struct module *load_module(void __user *umod,
 		goto unlink;
 
 	/* Link in to syfs. */
-	err = mod_sysfs_setup(mod, &info, mod->kp, mod->num_kp);
+	err = mod_sysfs_setup(mod, info, mod->kp, mod->num_kp);
 	if (err < 0)
 		goto unlink;
 
 	/* Get rid of temporary copy. */
-	free_copy(&info);
+	free_copy(info);
 
 	/* Done! */
 	trace_module_load(mod);
-	return mod;
+
+	return do_init_module(mod);
 
  unlink:
 	mutex_lock(&module_mutex);
@@ -3204,7 +3252,7 @@ static struct module *load_module(void __user *umod,
 	module_bug_cleanup(mod);
 
  ddebug:
-	dynamic_debug_remove(info.debug);
+	dynamic_debug_remove(info->debug);
  unlock:
 	mutex_unlock(&module_mutex);
 	synchronize_sched();
@@ -3216,10 +3264,10 @@ static struct module *load_module(void __user *umod,
  free_unload:
 	module_unload_free(mod);
  free_module:
-	module_deallocate(mod, &info);
+	module_deallocate(mod, info);
  free_copy:
-	free_copy(&info);
-	return ERR_PTR(err);
+	free_copy(info);
+	return err;
 }
 
 /* Call module constructors. */
@@ -3301,20 +3349,9 @@ void tima_mod_page_change_access(struct module *mod)
 
 #endif
 /* This is where the real work happens */
-SYSCALL_DEFINE3(init_module, void __user *, umod,
-		unsigned long, len, const char __user *, uargs)
+static int do_init_module(struct module *mod)
 {
-	struct module *mod;
 	int ret = 0;
-
-	/* Must have permission */
-	if (!capable(CAP_SYS_MODULE) || modules_disabled)
-		return -EPERM;
-
-	/* Do all the hard work */
-	mod = load_module(umod, len, uargs);
-	if (IS_ERR(mod))
-		return PTR_ERR(mod);
 
 	blocking_notifier_call_chain(&module_notify_list,
 			MODULE_STATE_COMING, mod);
@@ -3387,6 +3424,56 @@ SYSCALL_DEFINE3(init_module, void __user *, umod,
 	mutex_unlock(&module_mutex);
 
 	return 0;
+}
+
+static int init_module_permission(void)
+{
+	/* Must have permission */
+	if (!capable(CAP_SYS_MODULE) || modules_disabled)
+		return -EPERM;
+
+	return 0;
+}
+
+SYSCALL_DEFINE2(finit_module, int, fd, const char __user *, uargs)
+{
+	int err;
+	struct load_info info = { };
+
+	err = init_module_permission();
+	if (err)
+		return err;
+
+	pr_debug("finit_module: fd=%d, uargs=%p\n", fd, uargs);
+
+	if (fd < 0)
+		return -ENOEXEC;
+
+	err = copy_module_from_fd(fd, &info);
+	if (err)
+		return err;
+
+	return load_module(&info, uargs);
+}
+
+SYSCALL_DEFINE3(init_module, void __user *, umod,
+		unsigned long, len, const char __user *, uargs)
+{
+	int err;
+	struct load_info info = { };
+
+	err = init_module_permission();
+	if (err)
+		return err;
+
+	pr_debug("init_module: umod=%p, len=%lu, uargs=%p\n",
+	       umod, len, uargs);
+
+	err = copy_module_from_user(umod, len, &info);
+	if (err)
+		return err;
+
+	return load_module(&info, uargs);
 }
 
 static inline int within(unsigned long addr, void *start, unsigned long size)
