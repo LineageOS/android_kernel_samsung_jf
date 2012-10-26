@@ -235,7 +235,7 @@ static void fuse_dentry_canonical_path(const struct path *path, struct path *can
 	int err;
 	char *path_name;
 
-	req = fuse_get_req(fc);
+	req = fuse_get_req(fc, 1);
 	err = PTR_ERR(req);
 	if (IS_ERR(req))
 		goto default_path;
