@@ -56,9 +56,7 @@ static struct mutex clk_mutex;
 
 static struct list_head pre_kickoff_list;
 static struct list_head post_kickoff_list;
-
 struct work_struct mdp_reset_work;
-
 void mipi_dsi_configure_dividers(int fps);
 
 #if defined(RUMTIME_MIPI_CLK_CHANGE)
@@ -964,8 +962,8 @@ void mipi_dsi_host_init(struct mipi_panel_info *pinfo)
 	MIPI_OUTP(MIPI_DSI_BASE + 0x00c8, data); /* DSI_EOT_PACKET_CTRL */
 
 
-	/* allow only ack-err-status  to generate interrupt */
-	MIPI_OUTP(MIPI_DSI_BASE + 0x0108, 0x13ff3fe0); /* DSI_ERR_INT_MASK0 */
+	/* allow only ack-err-status + fifo underrun to generate interrupt */
+	MIPI_OUTP(MIPI_DSI_BASE + 0x0108, 0x13ff37e0); /* DSI_ERR_INT_MASK0 */
 
 	intr_ctrl |= DSI_INTR_ERROR_MASK;
 	MIPI_OUTP(MIPI_DSI_BASE + 0x010c, intr_ctrl); /* DSI_INTL_CTRL */
@@ -1803,7 +1801,7 @@ void mipi_dsi_cmdlist_tx(struct dcs_cmd_req *req)
 	if (req->flags & CMD_REQ_SINGLE_TX)
 		ret = mipi_dsi_cmds_single_tx(tp, req->cmds, req->cmds_cnt);
 	else
-	ret = mipi_dsi_cmds_tx(tp, req->cmds, req->cmds_cnt);
+		ret = mipi_dsi_cmds_tx(tp, req->cmds, req->cmds_cnt);
 
 	if (req->cb)
 		req->cb(ret);
@@ -2078,7 +2076,13 @@ irqreturn_t mipi_dsi_isr(int irq, void *ptr)
 #endif
 	if (isr & DSI_INTR_ERROR) {
 		mipi_dsi_mdp_stat_inc(STAT_DSI_ERROR);
+		spin_lock(&dsi_mdp_lock);
+		dsi_ctrl_lock = FALSE;
+		dsi_mdp_busy = FALSE;
+		mipi_dsi_disable_irq_nosync(DSI_MDP_TERM);
 		mipi_dsi_error();
+		complete(&dsi_mdp_comp);
+		spin_unlock(&dsi_mdp_lock);
 	}
 
 	if (isr & DSI_INTR_VIDEO_DONE) {
