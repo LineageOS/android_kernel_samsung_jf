@@ -409,6 +409,7 @@ static void smd_tty_close(struct tty_struct *tty, struct file *f)
 		if (info->tty) {
 			tasklet_kill(&info->tty_tsklt);
 			wake_lock_destroy(&info->wake_lock);
+			wake_lock_destroy(&info->ra_wake_lock);
 			info->tty = 0;
 		}
 		tty->driver_data = 0;
@@ -416,7 +417,6 @@ static void smd_tty_close(struct tty_struct *tty, struct file *f)
 		if (info->ch) {
 			smd_close(info->ch);
 			info->ch = 0;
-			wake_lock_destroy(&info->ra_wake_lock);
 			pil_put(info->pil);
 		}
 	}
