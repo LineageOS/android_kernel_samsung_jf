@@ -457,7 +457,7 @@ out:
 		set_page_dirty(page);
 		/* This check must be post dropping of transaction lock */
 		if (inode->i_sb->s_frozen == SB_UNFROZEN) {
-			wait_on_page_writeback(page);
+			wait_for_stable_page(page);
 		} else {
 			ret = -EAGAIN;
 			unlock_page(page);
