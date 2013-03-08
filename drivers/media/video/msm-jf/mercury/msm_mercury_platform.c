@@ -39,7 +39,7 @@ void msm_mercury_platform_p2v(struct file  *file,
 		GEN_POOL);
 	ion_free(mercury_client, *ionhandle);
 	*ionhandle = NULL;
-#elif CONFIG_ANDROID_PMEM
+#elif defined(CONFIG_ANDROID_PMEM)
 	put_pmem_file(file);
 #endif
 }
@@ -59,7 +59,7 @@ uint32_t msm_mercury_platform_v2p(int fd, uint32_t len,
 	rc = ion_map_iommu(mercury_client, *ionhandle, CAMERA_DOMAIN,
 		GEN_POOL, SZ_4K, 0, &paddr,
 		(unsigned long *)&size, 0, 0);
-#elif CONFIG_ANDROID_PMEM
+#elif defined(CONFIG_ANDROID_PMEM)
 	unsigned long kvstart;
 	rc = get_pmem_file(fd, &paddr, &kvstart, &size, file_p);
 #else

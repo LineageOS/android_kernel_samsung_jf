@@ -234,7 +234,7 @@ static int msm_stats_buf_prepare(struct msm_stats_bufq_ctrl *stats_ctrl,
 		pr_err("%s: cannot map address", __func__);
 		goto out2;
 	}
-#elif CONFIG_ANDROID_PMEM
+#elif defined(CONFIG_ANDROID_PMEM)
 	rc = get_pmem_file(info->fd, &paddr, &kvstart, &len, &file);
 	if (rc < 0) {
 		pr_err("%s: get_pmem_file fd %d error %d\n",
@@ -249,11 +249,13 @@ static int msm_stats_buf_prepare(struct msm_stats_bufq_ctrl *stats_ctrl,
 #endif
 	if (!info->len)
 		info->len = len;
+#ifdef CONFIG_ANDROID_PMEM
 	rc = msm_stats_check_pmem_info(info, len);
 	if (rc < 0) {
 		pr_err("%s: msm_stats_check_pmem_info err = %d", __func__, rc);
 		goto out3;
 	}
+#endif
 	paddr += info->offset;
 	len = info->len;
 	stats_buf->paddr = paddr;
@@ -264,14 +266,16 @@ static int msm_stats_buf_prepare(struct msm_stats_bufq_ctrl *stats_ctrl,
 	D("%s pmem_stats address is 0x%ld\n", __func__, paddr);
 	stats_buf->state = MSM_STATS_BUFFER_STATE_PREPARED;
 	return 0;
+#ifdef CONFIG_ANDROID_PMEM
 out3:
+#endif
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 	ion_unmap_iommu(client, stats_buf->handle, domain_num, 0);
 #endif
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 out2:
 	ion_free(client, stats_buf->handle);
-#elif CONFIG_ANDROID_PMEM
+#elif defined(CONFIG_ANDROID_PMEM)
 	put_pmem_file(stats_buf->file);
 #endif
 out1:
