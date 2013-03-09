@@ -26,8 +26,6 @@
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-device.h>
 
-#include <linux/android_pmem.h>
-
 #include "msm.h"
 #include "msm_cam_server.h"
 #include "msm_csid.h"
