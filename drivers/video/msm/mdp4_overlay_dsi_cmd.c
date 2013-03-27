@@ -408,10 +408,7 @@ int mdp4_dsi_cmd_pipe_commit(int cndx, int wait, u32 *release_busy)
 			*release_busy = false;
 			mutex_unlock(&vctrl->mfd->dma->ov_mutex);
 		}
-		if (pipe->ov_blt_addr)
-			mdp4_dsi_cmd_wait4ov(0);
-		else
-			mdp4_dsi_cmd_wait4dmap(0);
+		mdp4_dsi_cmd_wait4vsync(0);
 	}
 
 	return cnt;
@@ -1235,7 +1232,7 @@ void mdp4_dsi_cmd_overlay(struct msm_fb_data_type *mfd)
 	}
 
 	mdp4_overlay_mdp_perf_upd(mfd, 1);
-	mdp4_dsi_cmd_pipe_commit(cndx, 1, NULL);
+	mdp4_dsi_cmd_pipe_commit(cndx, 0, NULL);
 	mdp4_overlay_mdp_perf_upd(mfd, 0);
 	mutex_unlock(&mfd->dma->ov_mutex);
 
