@@ -41,8 +41,8 @@ static struct req {
 	int err;
 	const char *name;
 	umode_t mode;	/* 0 => delete */
-	uid_t uid;
-	gid_t gid;
+	kuid_t uid;
+	kgid_t gid;
 	struct device *dev;
 } *requests;
 
@@ -87,8 +87,8 @@ int devtmpfs_create_node(struct device *dev)
 		return 0;
 
 	req.mode = 0;
-	req.uid = 0;
-	req.gid = 0;
+	req.uid = GLOBAL_ROOT_UID;
+	req.gid = GLOBAL_ROOT_GID;
 	req.name = device_get_devnode(dev, &req.mode, &req.uid, &req.gid, &tmp);
 	if (!req.name)
 		return -ENOMEM;
@@ -193,8 +193,8 @@ static int create_path(const char *nodepath)
 	return err;
 }
 
-static int handle_create(const char *nodename, umode_t mode, uid_t uid,
-			 gid_t gid, struct device *dev)
+static int handle_create(const char *nodename, umode_t mode, kuid_t uid,
+			 kgid_t gid, struct device *dev)
 {
 	struct dentry *dentry;
 	struct path path;
@@ -367,7 +367,7 @@ int devtmpfs_mount(const char *mntdir)
 
 static DECLARE_COMPLETION(setup_done);
 
-static int handle(const char *name, umode_t mode, uid_t uid, gid_t gid,
+static int handle(const char *name, umode_t mode, kuid_t uid, kgid_t gid,
 		  struct device *dev)
 {
 	if (mode)
