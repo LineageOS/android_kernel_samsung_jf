@@ -273,7 +273,7 @@ static int get_name(struct vfsmount *mnt, struct dentry *dentry,
 		goto out;
 
 	error = -EINVAL;
-	if (!file->f_op->readdir)
+	if (!file->f_op->readdir && !file->f_op->iterate)
 		goto out_close;
 
 	buffer.name = name;
