@@ -147,18 +147,17 @@ SYSCALL_DEFINE4(osf_getdirentries, unsigned int, fd,
 {
 	int error;
 	struct file *file;
-	struct osf_dirent_callback buf;
+	struct osf_dirent_callback buf = {
+		.ctx.actor = osf_filldir,
+		.dirent = dirent,
+		.basep = basep,
+		.count = count
+	};
 
 	error = -EBADF;
 	file = fget(fd);
 	if (!file)
 		goto out;
-
-	buf.dirent = dirent;
-	buf.basep = basep;
-	buf.count = count;
-	buf.error = 0;
-	buf.ctx.actor = osf_filldir;
 
 	error = iterate_dir(file, &buf.ctx);
 	if (error >= 0)

@@ -126,17 +126,16 @@ SYSCALL_DEFINE3(old_readdir, unsigned int, fd,
 {
 	int error;
 	struct file * file;
-	struct readdir_callback buf;
+	struct readdir_callback buf = {
+		.ctx.actor = fillonedir,
+		.dirent = dirent
+		.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
+	};
 
 	error = -EBADF;
 	file = fget(fd);
 	if (!file)
 		goto out;
-
-	buf.ctx.actor = fillonedir;
-	buf.result = 0;
-	buf.dirent = dirent;
-	buf.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
 
 	error = iterate_dir(file, &buf.ctx);
 	if (buf.result)
@@ -219,7 +218,12 @@ SYSCALL_DEFINE3(getdents, unsigned int, fd,
 {
 	struct file * file;
 	struct linux_dirent __user * lastdirent;
-	struct getdents_callback buf;
+	struct getdents_callback buf = {
+		.ctx.actor = filldir,
+		.count = count,
+		.current_dir = dirent
+		.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
+	};
 	int error;
 
 	error = -EFAULT;
@@ -230,13 +234,6 @@ SYSCALL_DEFINE3(getdents, unsigned int, fd,
 	file = fget(fd);
 	if (!file)
 		goto out;
-
-	buf.current_dir = dirent;
-	buf.previous = NULL;
-	buf.count = count;
-	buf.error = 0;
-	buf.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
-	buf.ctx.actor = filldir;
 
 	error = iterate_dir(file, &buf.ctx);
 	if (error >= 0)
@@ -308,7 +305,12 @@ SYSCALL_DEFINE3(getdents64, unsigned int, fd,
 {
 	struct file * file;
 	struct linux_dirent64 __user * lastdirent;
-	struct getdents_callback64 buf;
+	struct getdents_callback64 buf = {
+		.ctx.actor = filldir64,
+		.count = count,
+		.current_dir = dirent
+		.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
+	};
 	int error;
 
 	error = -EFAULT;
@@ -319,13 +321,6 @@ SYSCALL_DEFINE3(getdents64, unsigned int, fd,
 	file = fget(fd);
 	if (!file)
 		goto out;
-
-	buf.current_dir = dirent;
-	buf.previous = NULL;
-	buf.count = count;
-	buf.error = 0;
-	buf.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
-	buf.ctx.actor = filldir64;
 
 	error = iterate_dir(file, &buf.ctx);
 	if (error >= 0)

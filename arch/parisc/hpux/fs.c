@@ -112,18 +112,16 @@ int hpux_getdents(unsigned int fd, struct hpux_dirent __user *dirent, unsigned i
 {
 	struct file * file;
 	struct hpux_dirent __user * lastdirent;
-	struct getdents_callback buf;
+	struct getdents_callback buf = {
+		.ctx.actor = filldir,
+		.current_dir = dirent,
+		.count = count
+	};
 	int error = -EBADF;
 
 	file = fget(fd);
 	if (!file)
 		goto out;
-
-	buf.current_dir = dirent;
-	buf.previous = NULL;
-	buf.count = count;
-	buf.error = 0;
-	buf.ctx.actor = filldir;
 
 	error = iterate_dir(file, &buf.ctx);
 	if (error >= 0)

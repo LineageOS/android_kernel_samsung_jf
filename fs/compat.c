@@ -876,16 +876,15 @@ asmlinkage long compat_sys_old_readdir(unsigned int fd,
 {
 	int error;
 	struct file *file;
-	struct compat_readdir_callback buf;
+	struct compat_readdir_callback buf = {
+		.ctx.actor = compat_fillonedir,
+		.dirent = dirent
+	};
 
 	error = -EBADF;
 	file = fget(fd);
 	if (!file)
 		goto out;
-
-	buf.result = 0;
-	buf.dirent = dirent;
-	buf.ctx.actor = compat_fillonedir;
 
 	error = iterate_dir(file, &buf.ctx);
 	if (buf.result)
@@ -959,7 +958,11 @@ asmlinkage long compat_sys_getdents(unsigned int fd,
 {
 	struct file * file;
 	struct compat_linux_dirent __user * lastdirent;
-	struct compat_getdents_callback buf;
+	struct compat_getdents_callback buf = {
+		.ctx.actor = compat_filldir,
+		.current_dir = dirent,
+		.count = count
+	};
 	int error;
 
 	error = -EFAULT;
@@ -970,12 +973,6 @@ asmlinkage long compat_sys_getdents(unsigned int fd,
 	file = fget(fd);
 	if (!file)
 		goto out;
-
-	buf.current_dir = dirent;
-	buf.previous = NULL;
-	buf.count = count;
-	buf.error = 0;
-	buf.ctx.actor = compat_filldir;
 
 	error = iterate_dir(file, &buf.ctx);
 	if (error >= 0)
@@ -1049,7 +1046,11 @@ asmlinkage long compat_sys_getdents64(unsigned int fd,
 {
 	struct file * file;
 	struct linux_dirent64 __user * lastdirent;
-	struct compat_getdents_callback64 buf;
+	struct compat_getdents_callback64 buf = {
+		.ctx.actor = compat_filldir64,
+		.current_dir = dirent,
+		.count = count
+	};
 	int error;
 
 	error = -EFAULT;
@@ -1060,12 +1061,6 @@ asmlinkage long compat_sys_getdents64(unsigned int fd,
 	file = fget(fd);
 	if (!file)
 		goto out;
-
-	buf.current_dir = dirent;
-	buf.previous = NULL;
-	buf.count = count;
-	buf.error = 0;
-	buf.ctx.actor = compat_filldir64;
 
 	error = iterate_dir(file, &buf.ctx);
 	if (error >= 0)

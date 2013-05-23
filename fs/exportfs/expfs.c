@@ -256,7 +256,11 @@ static int get_name(struct vfsmount *mnt, struct dentry *dentry,
 	struct inode *dir = dentry->d_inode;
 	int error;
 	struct file *file;
-	struct getdents_callback buffer;
+	struct getdents_callback buffer = {
+		.ctx.actor = filldir_one,
+		.name = name,
+		.ino = child->d_inode->i_ino
+	};
 
 	error = -ENOTDIR;
 	if (!dir || !S_ISDIR(dir->i_mode))
@@ -276,11 +280,7 @@ static int get_name(struct vfsmount *mnt, struct dentry *dentry,
 	if (!file->f_op->readdir && !file->f_op->iterate)
 		goto out_close;
 
-	buffer.name = name;
-	buffer.ino = child->d_inode->i_ino;
-	buffer.found = 0;
 	buffer.sequence = 0;
-	buffer.ctx.actor = filldir_one;
 	while (1) {
 		int old_seq = buffer.sequence;
 
