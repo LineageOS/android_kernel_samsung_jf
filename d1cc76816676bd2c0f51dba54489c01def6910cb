@@ -16,6 +16,23 @@
       "revId": "d1cc76816676bd2c0f51dba54489c01def6910cb",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "iC-zaAw",
+        "filename": "drivers/video/msm/msm_fb.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1131,
+      "author": {
+        "id": 883
+      },
+      "writtenOn": "2013-06-07T16:13:57Z",
+      "side": 0,
+      "message": "https://github.com/CyanogenMod/android_kernel_samsung_jf/commit/d58a2d635c63357ee0bef0b1354d793c85875a5f#L2R1131",
+      "revId": "d1cc76816676bd2c0f51dba54489c01def6910cb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
