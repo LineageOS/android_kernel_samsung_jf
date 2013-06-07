@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "iP1sDQo",
+        "filename": "arch/arm/configs/jf_defconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 711,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2013-06-07T10:06:38Z",
+      "side": 0,
+      "message": "Fix me!!!",
+      "revId": "d1cc76816676bd2c0f51dba54489c01def6910cb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
