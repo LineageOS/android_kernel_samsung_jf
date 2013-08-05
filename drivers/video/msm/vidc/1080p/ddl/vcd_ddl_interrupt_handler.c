@@ -1288,18 +1288,20 @@ static u32 ddl_decoder_output_done_callback(
 				&dec_disp_info->tag_top,
 				&dec_disp_info->tag_bottom);
 			if (dec_disp_info->display_correct ==
-				VIDC_1080P_DECODE_NOT_CORRECT ||
-				dec_disp_info->display_correct ==
-				VIDC_1080P_DECODE_APPROX_CORRECT)
+					VIDC_1080P_DECODE_NOT_CORRECT)
 				output_vcd_frm->flags |=
 					VCD_FRAME_FLAG_DATACORRUPT;
+			else
+				output_vcd_frm->flags &=
+					~VCD_FRAME_FLAG_DATACORRUPT;
 		} else {
 			if (dec_disp_info->decode_correct ==
-				VIDC_1080P_DECODE_NOT_CORRECT ||
-				dec_disp_info->decode_correct ==
-				VIDC_1080P_DECODE_APPROX_CORRECT)
+					VIDC_1080P_DECODE_NOT_CORRECT)
 				output_vcd_frm->flags |=
 					VCD_FRAME_FLAG_DATACORRUPT;
+			else
+				output_vcd_frm->flags &=
+					~VCD_FRAME_FLAG_DATACORRUPT;
 		}
 		if (decoder->codec.codec != VCD_CODEC_H264 &&
 			decoder->codec.codec != VCD_CODEC_MPEG2 &&
