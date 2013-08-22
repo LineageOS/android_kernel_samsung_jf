@@ -2307,7 +2307,7 @@ void mdp4_mixer_blend_setup(int mixer)
 	struct blend_cfg *blend;
 	int i, off, alpha_drop;
 	unsigned char *overlay_base;
-	uint32 c0, c1, c2, base_premulti;
+	uint32 c0, c1, c2;
 
 
 	d_pipe = ctrl->stage[mixer][MDP4_MIXER_STAGE_BASE];
@@ -2317,8 +2317,6 @@ void mdp4_mixer_blend_setup(int mixer)
 	}
 
 	blend = &ctrl->blend[mixer][MDP4_MIXER_STAGE0];
-	base_premulti = ctrl->blend[mixer][MDP4_MIXER_STAGE_BASE].op &
-		MDP4_BLEND_FG_ALPHA_BG_CONST;
 	for (i = MDP4_MIXER_STAGE0; i < MDP4_MIXER_STAGE_MAX; i++) {
 		blend->solidfill = 0;
 		blend->op = (MDP4_BLEND_FG_ALPHA_FG_CONST |
