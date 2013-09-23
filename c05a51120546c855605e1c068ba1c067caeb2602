@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5afe65bd_7995cf3e",
+        "filename": "drivers/cpufreq/cpufreq.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 527,
+      "author": {
+        "id": 6351
+      },
+      "writtenOn": "2013-09-23T21:40:23Z",
+      "side": 1,
+      "message": "What happens if they set the governor for any cpu except CPU 0?  This will leave CPU 0 as the old governor.  This will happen, for example, if the user has two programs that are each trying to set the governor for all the cores.\n\nHow about iterating over all the cores and not doing anything or policy-\u003ecpu instead of assuming policy-\u003ecpu is 0?",
+      "revId": "c05a51120546c855605e1c068ba1c067caeb2602",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
