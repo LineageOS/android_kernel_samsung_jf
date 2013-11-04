@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa1b9901_bd456b18",
+        "filename": "arch/arm/configs/cyanogen_jf_defconfig",
+        "patchSetId": 2
+      },
+      "lineNbr": 1213,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2013-11-04T13:51:52Z",
+      "side": 1,
+      "message": "This seems to be breaking recovery. A recovery built with this enabled almost always boots to a black screen. USB does come up (eventually, and is wonky) but nothing on the screen. A couple times I was able to get it to come up, seemingly randomly, but most of the time it won\u0027t.",
+      "revId": "94c5ae041bfecef682b33591371081a17c4a4753",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
