@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da20952f_0ee217d6",
+        "filename": "include/linux/msm_vidc_enc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 610,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2013-11-17T18:57:27Z",
+      "side": 1,
+      "message": "Requires a userspace change that I believe is not going to be merged to 10.2?",
+      "revId": "2aa219c63072e3479f2110cb34f5d65f8b61d2ca",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
