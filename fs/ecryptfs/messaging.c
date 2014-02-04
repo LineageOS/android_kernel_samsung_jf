@@ -293,20 +293,20 @@ int ecryptfs_process_response(struct ecryptfs_message *msg, uid_t euid,
 	msg_ctx = &ecryptfs_msg_ctx_arr[msg->index];
 	mutex_lock(&msg_ctx->mux);
 	mutex_lock(&ecryptfs_daemon_hash_mux);
-	rcu_read_lock();
-	nsproxy = task_nsproxy(msg_ctx->task);
+	task_lock(msg_ctx->task);
+	nsproxy = msg_ctx->task->nsproxy;
 	if (nsproxy == NULL) {
 		rc = -EBADMSG;
 		printk(KERN_ERR "%s: Receiving process is a zombie. Dropping "
 		       "message.\n", __func__);
-		rcu_read_unlock();
+		task_unlock(msg_ctx->task);
 		mutex_unlock(&ecryptfs_daemon_hash_mux);
 		goto wake_up;
 	}
 	tsk_user_ns = __task_cred(msg_ctx->task)->user_ns;
 	ctx_euid = task_euid(msg_ctx->task);
 	rc = ecryptfs_find_daemon_by_euid(&daemon, ctx_euid, tsk_user_ns);
-	rcu_read_unlock();
+	task_unlock(msg_ctx->task);
 	mutex_unlock(&ecryptfs_daemon_hash_mux);
 	if (rc) {
 		rc = -EBADMSG;
