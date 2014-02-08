@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fade3982_b31de768",
+        "filename": "drivers/leds/leds-an30259a.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 883
+      },
+      "writtenOn": "2014-02-08T04:10:59Z",
+      "side": 0,
+      "message": "comment out this block if you want brighter led.  no unnessary code rewrite by copying over whatever you had from note 2",
+      "revId": "2ab6e0f59a2596aa9c47c5e6cf2e83d2f6e770a7",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fade3982_931a636d",
+        "filename": "drivers/leds/leds-an30259a.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 883
+      },
+      "writtenOn": "2014-02-08T04:10:59Z",
+      "side": 0,
+      "message": "comment out...",
+      "revId": "2ab6e0f59a2596aa9c47c5e6cf2e83d2f6e770a7",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
