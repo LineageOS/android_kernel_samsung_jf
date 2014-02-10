@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fade3982_530c5894",
+        "filename": "drivers/leds/leds-an30259a.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 883
+      },
+      "writtenOn": "2014-02-10T19:42:23Z",
+      "side": 1,
+      "message": "those changes are probably useless now.",
+      "revId": "5e94428ebe1d8217da202831ea0931995d67e4af",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
