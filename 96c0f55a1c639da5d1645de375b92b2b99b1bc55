@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fade3982_5acf44b0",
+        "filename": "arch/arm/configs/cyanogen_jf_defconfig",
+        "patchSetId": 4
+      },
+      "lineNbr": 1440,
+      "author": {
+        "id": 3671
+      },
+      "writtenOn": "2014-02-14T07:15:26Z",
+      "side": 1,
+      "message": "eewwwwwwwwww\n\nwhitespace...............\n\n\nalso - we can probably turn at least SOME of this stuff off...",
+      "revId": "96c0f55a1c639da5d1645de375b92b2b99b1bc55",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
