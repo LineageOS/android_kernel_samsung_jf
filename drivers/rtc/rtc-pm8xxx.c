@@ -311,6 +311,7 @@ static int pm8xxx_rtc_alarm_irq_enable(struct device *dev, unsigned int enable)
 	unsigned long irq_flags;
 	struct pm8xxx_rtc *rtc_dd = dev_get_drvdata(dev);
 	u8 ctrl_reg;
+	u8 value[4] = {0};
 
 	spin_lock_irqsave(&rtc_dd->ctrl_reg_lock, irq_flags);
 	ctrl_reg = rtc_dd->ctrl_reg;
@@ -324,6 +325,14 @@ static int pm8xxx_rtc_alarm_irq_enable(struct device *dev, unsigned int enable)
 	}
 
 	rtc_dd->ctrl_reg = ctrl_reg;
+
+	/* Clear Alarm register */
+	if (!enable) {
+		rc = pm8xxx_write_wrapper(rtc_dd, value,
+			rtc_dd->alarm_rw_base, NUM_8_BIT_RTC_REGS);
+		if (rc < 0)
+			dev_err(dev, "Clear ALARM value reg failed\n");
+	}
 
 rtc_rw_fail:
 	spin_unlock_irqrestore(&rtc_dd->ctrl_reg_lock, irq_flags);
