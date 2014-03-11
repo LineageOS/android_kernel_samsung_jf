@@ -2346,7 +2346,7 @@ static int khugepaged(void *none)
 	struct mm_slot *mm_slot;
 
 	set_freezable();
-	set_user_nice(current, 19);
+	set_user_nice(current, MAX_NICE);
 
 	/* serialize with start_khugepaged() */
 	mutex_lock(&khugepaged_mutex);
