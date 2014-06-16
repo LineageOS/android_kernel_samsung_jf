@@ -345,7 +345,7 @@ static int hwrng_fillfn(void *unused)
 		add_hwgenerator_randomness((void *)rng_fillbuf, rc,
 					   rc * current_quality * 8 >> 10);
 	}
-	hwrng_fill = 0;
+	hwrng_fill = NULL;
 	return 0;
 }
 
