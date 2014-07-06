@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba0121b8_748321cd",
+        "filename": "drivers/misc/gamma_control.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2014-07-06T13:08:59Z",
+      "side": 1,
+      "message": "This is what you get for nesting ifdefs. the number here should be 1",
+      "revId": "8cb5e2d7db102d3fe12f2f8551e45c04eaa6195a",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
