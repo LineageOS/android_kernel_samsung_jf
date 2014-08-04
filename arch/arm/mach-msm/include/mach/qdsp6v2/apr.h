@@ -165,4 +165,5 @@ void apr_set_modem_state(enum apr_subsys_state state);
 enum apr_subsys_state apr_get_q6_state(void);
 int apr_set_q6_state(enum apr_subsys_state state);
 void apr_set_subsys_state(void);
+extern int is_modem_up;
 #endif
