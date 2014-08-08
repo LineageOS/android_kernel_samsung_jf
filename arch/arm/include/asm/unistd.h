@@ -405,6 +405,7 @@
 #define __NR_process_vm_readv		(__NR_SYSCALL_BASE+376)
 #define __NR_process_vm_writev		(__NR_SYSCALL_BASE+377)
 #define __NR_seccomp			(__NR_SYSCALL_BASE+383)
+#define __NR_getrandom			(__NR_SYSCALL_BASE+384)
 
 /*
  * The following SWIs are ARM private.
