@@ -144,10 +144,8 @@ autogroup_move_group(struct task_struct *p, struct autogroup *ag)
 
 	p->signal->autogroup = autogroup_kref_get(ag);
 
-	t = p;
-	do {
+	for_each_thread(p, t)
 		sched_move_task(t);
-	} while_each_thread(p, t);
 
 	unlock_task_sighand(p, &flags);
 	autogroup_kref_put(prev);
