@@ -168,4 +168,6 @@ source "drivers/motor_msm8930/Kconfig"
 
 source "drivers/sensors/Kconfig"
 
+source "drivers/android/Kconfig"
+
 endmenu

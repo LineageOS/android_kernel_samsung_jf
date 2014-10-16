@@ -156,3 +156,5 @@ obj-$(CONFIG_FELICA) += felica/
 
 #sensor_class
 obj-$(CONFIG_SENSORS)		+= sensors/
+
+obj-$(CONFIG_ANDROID)		+= android/
