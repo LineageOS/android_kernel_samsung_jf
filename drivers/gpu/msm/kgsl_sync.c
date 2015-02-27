@@ -159,12 +159,12 @@ int kgsl_add_fence_event(struct kgsl_device *device,
 		ret = -EINVAL;
 		goto fail_fd;
 	}
-	sync_fence_install(fence, priv.fence_fd);
 
 	if (copy_to_user(data, &priv, sizeof(priv))) {
 		ret = -EFAULT;
 		goto fail_copy_fd;
 	}
+	sync_fence_install(fence, priv.fence_fd);
 
 	/*
 	 * Hold the context ref-count for the event - it will get released in
