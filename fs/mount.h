@@ -77,7 +77,6 @@ static inline void get_mnt_ns(struct mnt_namespace *ns)
 }
 
 struct proc_mounts {
-	struct seq_file m;
 	struct mnt_namespace *ns;
 	struct path root;
 	int (*show)(struct seq_file *, struct vfsmount *);
@@ -85,7 +84,5 @@ struct proc_mounts {
 	u64 cached_event;
 	loff_t cached_index;
 };
-
-#define proc_mounts(p) (container_of((p), struct proc_mounts, m))
 
 extern const struct seq_operations mounts_op;
