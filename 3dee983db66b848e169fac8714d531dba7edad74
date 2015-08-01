@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf091321_041ed30b",
+        "filename": "drivers/video/msm/msm_fb.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1258,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2015-08-01T08:25:30Z",
+      "side": 1,
+      "message": "this section is a mirror of FB_BLANK_UNBLANK, for some reason jf doesn\u0027t need an msleep so you can remove it",
+      "revId": "3dee983db66b848e169fac8714d531dba7edad74",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
