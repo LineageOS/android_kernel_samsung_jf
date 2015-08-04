@@ -298,10 +298,12 @@ int mdp4_dsi_video_pipe_commit(int cndx, int wait)
 	mdp4_stat.overlay_commit[pipe->mixer_num]++;
 
 	if (wait) {
+		mutex_unlock(&vctrl->mfd->dma->ov_mutex);
 		if (pipe->ov_blt_addr)
 			mdp4_dsi_video_wait4ov(0);
 		else
 			mdp4_dsi_video_wait4vsync(0);
+		mutex_lock(&vctrl->mfd->dma->ov_mutex);
 	}
 #ifdef MDP_ODD_RESOLUTION_CTRL
 	current_pipe_ndx = pipe->pipe_ndx;
