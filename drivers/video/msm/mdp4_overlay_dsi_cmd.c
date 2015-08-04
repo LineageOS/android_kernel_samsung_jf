@@ -408,7 +408,9 @@ int mdp4_dsi_cmd_pipe_commit(int cndx, int wait, u32 *release_busy)
 			*release_busy = false;
 			mutex_unlock(&vctrl->mfd->dma->ov_mutex);
 		}
+		mutex_unlock(&vctrl->mfd->dma->ov_mutex);
 		mdp4_dsi_cmd_wait4vsync(0);
+		mutex_lock(&vctrl->mfd->dma->ov_mutex);
 	}
 
 	return cnt;
