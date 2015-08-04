@@ -297,10 +297,12 @@ int mdp4_lcdc_pipe_commit(int cndx, int wait)
 	mdp4_stat.overlay_commit[pipe->mixer_num]++;
 
 	if (wait) {
+		mutex_unlock(&vctrl->mfd->dma->ov_mutex);
 		if (pipe->ov_blt_addr)
 			mdp4_lcdc_wait4ov(0);
 		else
 			mdp4_lcdc_wait4dmap(0);
+		mutex_lock(&vctrl->mfd->dma->ov_mutex);
 	}
 
 	return cnt;
