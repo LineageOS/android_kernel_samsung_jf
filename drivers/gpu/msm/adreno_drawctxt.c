@@ -134,8 +134,8 @@ void build_quad_vtxbuff(struct adreno_context *drawctxt,
 	*incmd = cmd;
 }
 
-static void wait_callback(struct kgsl_device *device, void *priv, u32 id,
-		u32 timestamp, u32 type)
+static void wait_callback(struct kgsl_device *device,
+		struct kgsl_context *context, void *priv, int result)
 {
 	struct adreno_context *drawctxt = priv;
 	wake_up_all(&drawctxt->waiting);
@@ -210,8 +210,8 @@ int adreno_drawctxt_wait(struct adreno_device *adreno_dev,
 
 	trace_adreno_drawctxt_wait_start(context->id, timestamp);
 
-	ret = kgsl_add_event(device, context->id, timestamp,
-		wait_callback, drawctxt, NULL);
+	ret = kgsl_add_event(device, &context->events, timestamp,
+		wait_callback, (void *) drawctxt);
 	if (ret)
 		goto done;
 
@@ -261,8 +261,8 @@ done:
 	return ret;
 }
 
-static void global_wait_callback(struct kgsl_device *device, void *priv, u32 id,
-		u32 timestamp, u32 type)
+static void global_wait_callback(struct kgsl_device *device,
+		struct kgsl_context *context, void *priv, int result)
 {
 	struct adreno_context *drawctxt = priv;
 
@@ -307,8 +307,8 @@ int adreno_drawctxt_wait_global(struct adreno_device *adreno_dev,
 
 	trace_adreno_drawctxt_wait_start(KGSL_MEMSTORE_GLOBAL, timestamp);
 
-	ret = kgsl_add_event(device, KGSL_MEMSTORE_GLOBAL, timestamp,
-		global_wait_callback, drawctxt, NULL);
+	ret = kgsl_add_event(device, &device->global_events, timestamp,
+		global_wait_callback, (void *) drawctxt);
 	if (ret) {
 		kgsl_context_put(context);
 		goto done;
@@ -333,7 +333,8 @@ int adreno_drawctxt_wait_global(struct adreno_device *adreno_dev,
 	mutex_lock(&device->mutex);
 
 	if (ret)
-		kgsl_cancel_events_timestamp(device, NULL, timestamp);
+		kgsl_cancel_events_timestamp(device, &device->global_events,
+			timestamp);
 
 done:
 	trace_adreno_drawctxt_wait_done(KGSL_MEMSTORE_GLOBAL, timestamp, ret);
@@ -380,7 +381,7 @@ void adreno_drawctxt_invalidate(struct kgsl_device *device,
 		mutex_unlock(&drawctxt->mutex);
 
 		mutex_lock(&device->mutex);
-		kgsl_cancel_events_timestamp(device, context,
+		kgsl_cancel_events_timestamp(device, &context->events,
 			cmdbatch->timestamp);
 		mutex_unlock(&device->mutex);
 
