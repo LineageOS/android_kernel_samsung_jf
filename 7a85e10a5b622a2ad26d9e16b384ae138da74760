@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f1d235d_0c2dcb94",
+        "filename": "drivers/video/msm/msm_fb.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1247,
+      "author": {
+        "id": 6315
+      },
+      "writtenOn": "2015-09-09T17:13:46Z",
+      "side": 1,
+      "message": "The whole thing is a bit funky and cpu must be \"1\".",
+      "range": {
+        "startLine": 1247,
+        "startChar": 11,
+        "endLine": 1247,
+        "endChar": 12
+      },
+      "revId": "7a85e10a5b622a2ad26d9e16b384ae138da74760",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
