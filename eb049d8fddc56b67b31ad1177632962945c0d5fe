@@ -22,6 +22,30 @@
       "revId": "eb049d8fddc56b67b31ad1177632962945c0d5fe",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3f1d235d_8124040f",
+        "filename": "drivers/video/msm/msm_fb.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1250,
+      "author": {
+        "id": 5589
+      },
+      "writtenOn": "2015-09-09T09:01:36Z",
+      "side": 1,
+      "message": "Looks like you go up to 1728000?",
+      "parentUuid": "3f1d235d_c112fcb1",
+      "range": {
+        "startLine": 1250,
+        "startChar": 24,
+        "endLine": 1250,
+        "endChar": 31
+      },
+      "revId": "eb049d8fddc56b67b31ad1177632962945c0d5fe",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
