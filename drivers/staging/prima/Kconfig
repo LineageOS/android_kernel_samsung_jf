@@ -35,4 +35,8 @@ config QCOM_TDLS
 	bool "Enable TDLS feature"
 	default y
 
+config WLAN_FEATURE_RX_WAKELOCK
+	bool "Enable RX wake lock feature"
+	default n
+
 endif # PRIMA_WLAN
