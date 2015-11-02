@@ -35,15 +35,8 @@ extern struct mm_struct *mm_for_maps(struct task_struct *);
 
 #ifdef CONFIG_MMU
 #define VMALLOC_TOTAL (VMALLOC_END - VMALLOC_START)
-extern void get_vmalloc_info(struct vmalloc_info *vmi);
 #else
-
 #define VMALLOC_TOTAL 0UL
-#define get_vmalloc_info(vmi)			\
-do {						\
-	(vmi)->used = 0;			\
-	(vmi)->largest_chunk = 0;		\
-} while(0)
 #endif
 
 extern int proc_tid_stat(struct seq_file *m, struct pid_namespace *ns,
