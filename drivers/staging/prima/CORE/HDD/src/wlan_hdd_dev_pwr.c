@@ -228,9 +228,10 @@ rx_suspend:
    wake_up_interruptible(&vosSchedContext->mcWaitQueue);
 
    /* Wait for Suspend Confirmation from MC Thread */
-   rc = wait_for_completion_interruptible_timeout(&pHddCtx->mc_sus_event_var, msecs_to_jiffies(200));
+   rc = wait_for_completion_interruptible_timeout(&pHddCtx->mc_sus_event_var,
+                                                        msecs_to_jiffies(200));
 
-   if(!rc)
+   if (rc <= 0)
    {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
             "%s: MC Thread: timeout while suspending %ld",
