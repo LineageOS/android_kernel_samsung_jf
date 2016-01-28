@@ -36,7 +36,7 @@ static ssize_t light_vendor_show(struct device *dev,
 static ssize_t light_name_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
-if (chip_cm3323_rev > 0) {
+if (chip_cm3323_rev >= 0) {
 	struct ssp_data *data = dev_get_drvdata(dev);
 	if (data->ap_rev >= chip_cm3323_rev)
 		return sprintf(buf, "%s\n", CHIP_ID);
@@ -97,6 +97,9 @@ void initialize_light_factorytest(struct ssp_data *data)
 			 || samsung_hardware == SHV_E300
 		 	 || samsung_hardware == SGH_N045)
 		chip_cm3323_rev = 9;
+	else if (samsung_hardware == GT_I9515
+		 	 || samsung_hardware == GT_I9515L)
+		chip_cm3323_rev = 0;
 
 	sensors_register(data->light_device, data, light_attrs, "light_sensor");
 }

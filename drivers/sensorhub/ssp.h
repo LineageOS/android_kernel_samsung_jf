@@ -98,6 +98,8 @@ enum {
 	SHV_E300,
 	SGH_N045,
 	XXX_XXXX,
+	GT_I9515,
+	GT_I9515L,
 };
 
 extern int samsung_hardware;
