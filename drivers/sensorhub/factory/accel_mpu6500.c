@@ -36,7 +36,7 @@ static ssize_t accel_vendor_show(struct device *dev,
 {
 	struct ssp_data *data = dev_get_drvdata(dev);
 
-	if (k330_rev > 0) {
+	if (k330_rev >= 0) {
 		if (is_jf_eur == true) {
 			if (data->ap_rev == 13)
 				return sprintf(buf, "%s\n", VENDOR);
@@ -59,7 +59,7 @@ static ssize_t accel_name_show(struct device *dev,
 {
 	struct ssp_data *data = dev_get_drvdata(dev);
 
-	if (k330_rev > 0) {
+	if (k330_rev >= 0) {
 		if (is_jf_eur == true) {
 			if (data->ap_rev == 13)
 				return sprintf(buf, "%s\n", CHIP_ID);
@@ -359,6 +359,9 @@ void initialize_accel_factorytest(struct ssp_data *data)
 		k330_rev = 11;
 	else if (samsung_hardware == GT_I9295)
 		k330_rev = 12;
+	else if (samsung_hardware == GT_I9515
+		 	 || samsung_hardware == GT_I9515L)
+		k330_rev = 0;
 
 	sensors_register(data->acc_device, data, acc_attrs,
 		"accelerometer_sensor");
