@@ -617,10 +617,10 @@ VosMCThread
       {
         spin_lock(&pSchedContext->McThreadLock);
 
+        INIT_COMPLETION(pSchedContext->ResumeMcEvent);
         /* Mc Thread Suspended */
         complete(&pHddCtx->mc_sus_event_var);
 
-        INIT_COMPLETION(pSchedContext->ResumeMcEvent);
         spin_unlock(&pSchedContext->McThreadLock);
 
         /* Wait foe Resume Indication */
@@ -1028,10 +1028,10 @@ static int VosTXThread ( void * Arg )
       {
         spin_lock(&pSchedContext->TxThreadLock);
 
+        INIT_COMPLETION(pSchedContext->ResumeTxEvent);
         /* Tx Thread Suspended */
         complete(&pHddCtx->tx_sus_event_var);
 
-        INIT_COMPLETION(pSchedContext->ResumeTxEvent);
         spin_unlock(&pSchedContext->TxThreadLock);
 
         /* Wait foe Resume Indication */
@@ -1229,10 +1229,10 @@ static int VosRXThread ( void * Arg )
       {
         spin_lock(&pSchedContext->RxThreadLock);
 
+        INIT_COMPLETION(pSchedContext->ResumeRxEvent);
         /* Rx Thread Suspended */
         complete(&pHddCtx->rx_sus_event_var);
 
-        INIT_COMPLETION(pSchedContext->ResumeRxEvent);
         spin_unlock(&pSchedContext->RxThreadLock);
 
         /* Wait for Resume Indication */
