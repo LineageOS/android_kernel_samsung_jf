@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2012, 2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -310,10 +310,12 @@ static int __devexit pm8821_remove(struct platform_device *pdev)
 	struct pm8821 *pmic = NULL;
 
 	drvdata = platform_get_drvdata(pdev);
-	if (drvdata)
-		pmic = drvdata->pm_chip_data;
-	if (pmic)
-		mfd_remove_devices(pmic->dev);
+	if (!drvdata)
+		return 0;
+	pmic = drvdata->pm_chip_data;
+	if (!pmic)
+		return 0;
+	mfd_remove_devices(pmic->dev);
 	if (pmic->irq_chip) {
 		pm8821_irq_exit(pmic->irq_chip);
 		pmic->irq_chip = NULL;
