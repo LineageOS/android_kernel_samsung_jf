@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ffb9cba7_a53d83bc",
+        "filename": "init/main.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 467,
+      "author": {
+        "id": 14035
+      },
+      "writtenOn": "2016-03-04T23:31:07Z",
+      "side": 1,
+      "message": "I have a user who confirmed this commit doesn\u0027t work on their SM-S975L.\n\nWe need to reduce this to 7 else we\u0027re comparing \"SM-S975L\" to \"SM-S975 \"\n\nUser feedback: http://forum.xda-developers.com/showpost.php?p\u003d65645321\u0026postcount\u003d526\nMy commit: https://github.com/xsynergy510x/android_kernel_samsung_jf/commit/c2dd9a6a9ecbc47609bea141155824a9a4547e91\n\nI added \"L\" to the end of the device code because I wasn\u0027t able to verify if other SM-S975_ variants exist, but I\u0027m sure reducing this to 7 should do the same trick. I\u0027m not able to build at the moment to verify that.",
+      "range": {
+        "startLine": 467,
+        "startChar": 37,
+        "endLine": 467,
+        "endChar": 38
+      },
+      "revId": "1d4f13d845cfda0e0b89b0b247b825fbaa0b0db9",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
