@@ -111,7 +111,7 @@ static void pm_qos_set_worker(struct work_struct *work)
 {
 	/* keep the request for 500ms */
 	pm_qos_update_request_timeout(&smd_tty_qos_req,
-			0, jiffies_to_usecs(HZ / 2));
+			0, jiffies_to_usecs(50));
 }
 
 static void buf_req_retry(unsigned long param)
@@ -177,7 +177,7 @@ static void smd_tty_read(unsigned long param)
 #ifdef CONFIG_HAS_WAKELOCK
 		pr_debug("%s: lock wakelock %s\n", __func__, info->wake_lock.name);
 #endif
-		wake_lock_timeout(&info->wake_lock, HZ / 2);
+		wake_lock_timeout(&info->wake_lock, msecs_to_jiffies(500));
 		tty_flip_buffer_push(tty);
 	}
 
@@ -349,7 +349,7 @@ static int smd_tty_open(struct tty_struct *tty, struct file *f)
 
 			res = wait_event_interruptible_timeout(
 				info->ch_opened_wait_queue,
-				info->is_open, (2 * HZ));
+				info->is_open, msecs_to_jiffies(2000));
 			if (res == 0)
 				res = -ETIMEDOUT;
 			if (res < 0) {
