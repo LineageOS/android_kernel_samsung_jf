@@ -474,7 +474,7 @@ static int msm_afe_hw_params(struct snd_pcm_substream *substream,
 				runtime->hw.buffer_bytes_max,
 				&dma_buf->addr, GFP_KERNEL);
 
-	pr_debug("%s: dma_buf->area: 0x%p, dma_buf->addr: 0x%x", __func__,
+	pr_debug("%s: dma_buf->area: 0x%pK, dma_buf->addr: 0x%x", __func__,
 			(unsigned int *) dma_buf->area, dma_buf->addr);
 	if (!dma_buf->area) {
 		pr_err("%s:MSM AFE memory allocation failed\n", __func__);

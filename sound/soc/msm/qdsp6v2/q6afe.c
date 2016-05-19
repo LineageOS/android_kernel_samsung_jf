@@ -52,7 +52,7 @@ static struct acdb_cal_block afe_cal_addr[MAX_AUDPROC_TYPES];
 static int32_t afe_callback(struct apr_client_data *data, void *priv)
 {
 	if (data->opcode == RESET_EVENTS) {
-		pr_debug("q6afe: reset event = %d %d apr[%p]\n",
+		pr_debug("q6afe: reset event = %d %d apr[%pK]\n",
 			data->reset_event, data->reset_proc, this_afe.apr);
 		if (this_afe.apr) {
 			apr_reset(this_afe.apr);

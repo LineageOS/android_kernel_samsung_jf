@@ -1245,7 +1245,7 @@ static int msm_mi2s_startup(struct snd_pcm_substream *substream)
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 
-	pr_debug("%s: dai name %s %p\n", __func__, cpu_dai->name, cpu_dai->dev);
+	pr_debug("%s: dai name %s %pK\n", __func__, cpu_dai->name, cpu_dai->dev);
 
 	if (atomic_inc_return(&mi2s_rsc_ref) == 1) {
 		pr_debug("%s: acquire mi2s resources\n", __func__);

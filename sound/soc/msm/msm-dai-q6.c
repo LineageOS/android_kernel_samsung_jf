@@ -129,7 +129,7 @@ static int msm_dai_q6_mi2s_startup(struct snd_pcm_substream *substream,
 	struct msm_dai_q6_mi2s_dai_data *mi2s_dai_data =
 		dev_get_drvdata(dai->dev);
 
-	dev_dbg(dai->dev, "%s: cnst list %p\n", __func__,
+	dev_dbg(dai->dev, "%s: cnst list %pK\n", __func__,
 		mi2s_dai_data->rate_constraint.list);
 
 	if (mi2s_dai_data->rate_constraint.list) {
@@ -1986,7 +1986,7 @@ static __devinit int msm_dai_q6_mi2s_dev_probe(struct platform_device *pdev)
 	struct msm_dai_q6_mi2s_dai_data *dai_data;
 	int rc = 0;
 
-	dev_dbg(&pdev->dev, "%s: pdev %p dev %p\n", __func__, pdev, &pdev->dev);
+	dev_dbg(&pdev->dev, "%s: pdev %pK dev %pK\n", __func__, pdev, &pdev->dev);
 
 	dai_data = kzalloc(sizeof(struct msm_dai_q6_mi2s_dai_data),
 		GFP_KERNEL);
