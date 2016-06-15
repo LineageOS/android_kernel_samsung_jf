@@ -1137,7 +1137,7 @@ int external_common_state_create(struct platform_device *pdev)
 	DEV_DBG("%s: sysfs group %p\n", __func__,
 		external_common_state->mfd);
 	external_common_state->uevent_kobj = &mfd->fbi->dev->kobj;
-	DEV_ERR("%s: sysfs group %p\n", __func__,
+	DEV_ERR("%s: sysfs group %pK\n", __func__,
 		external_common_state->uevent_kobj);
 
 	kobject_uevent(external_common_state->uevent_kobj, KOBJ_ADD);

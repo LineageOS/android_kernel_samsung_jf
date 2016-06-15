@@ -876,7 +876,7 @@ static int mdp4_wfd_dequeue_update(struct msm_fb_data_type *mfd,
 	pipe->ov_blt_addr = (ulong) (node ? node->addr : NULL);
 
 	if (!pipe->ov_blt_addr) {
-		pr_err("%s: no writeback buffer 0x%x, %p\n", __func__,
+		pr_err("%s: no writeback buffer 0x%x, %pK\n", __func__,
 			(unsigned int)pipe->ov_blt_addr, node);
 
 		if (node) {
@@ -910,7 +910,7 @@ static void mdp4_wfd_queue_wakeup(struct msm_fb_data_type *mfd,
 	if (node == NULL)
 		return;
 
-	pr_debug("%s: mfd=%x node: %p", __func__, (int)mfd, node);
+	pr_debug("%s: mfd=%x node: %pK", __func__, (int)mfd, node);
 
 	mutex_lock(&mfd->writeback_mutex);
 	list_add_tail(&node->active_entry, &mfd->writeback_busy_queue);

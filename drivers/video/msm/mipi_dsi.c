@@ -553,7 +553,7 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 			periph_base = ioremap(MMSS_SERDES_BASE_PHY, 0x100);
 
 			if (periph_base) {
-				pr_debug("periph_base %p\n", periph_base);
+				pr_debug("periph_base %pK\n", periph_base);
 				writel(0x4, periph_base + 0x28);
 				writel(0xc, periph_base + 0x28);
 			} else {
