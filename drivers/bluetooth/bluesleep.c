@@ -55,6 +55,7 @@
 
 #include <linux/barcode_emul.h>
 
+#include <linux/jiffies.h>
 
 #define BT_SLEEP_DBG
 #ifndef BT_SLEEP_DBG
@@ -228,7 +229,8 @@ void bluesleep_sleep_wakeup(void)
 		hsuart_power(1);
 		__pm_stay_awake(&bsi->bluesleep_wakeup_source);
 		/* Start the timer */
-		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
+		mod_timer(&tx_timer,
+		          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 		if (bsi->has_ext_wake == 1) {
 			ret = ice_gpiox_set(bsi->ext_wake, 1);
 			if (ret)
@@ -257,7 +259,8 @@ static void bluesleep_sleep_wakeup_wq(struct work_struct *work)
 
 		__pm_stay_awake(&bsi->bluesleep_wakeup_source);
 		/* Start the timer */
-		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
+		mod_timer(&tx_timer,
+		          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 		if (bsi->has_ext_wake == 1) {
 			ret = ice_gpiox_set(bsi->ext_wake, 1);
 			if (ret)
@@ -299,12 +302,14 @@ static void bluesleep_sleep_work(struct work_struct *work)
 			__pm_wakeup_event(
 				&bsi->bluesleep_wakeup_source, msecs_to_jiffies(500));
 		} else {
-			mod_timer(&tx_timer, jiffies + TX_TIMER_INTERVAL * HZ);
+			mod_timer(&tx_timer,
+			          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 			return;
 		}
 	} else if (!test_bit(BT_EXT_WAKE, &flags)
 			&& !test_bit(BT_ASLEEP, &flags)) {
-		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
+		mod_timer(&tx_timer,
+		          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 		if (bsi->has_ext_wake == 1) {
 			ret = ice_gpiox_set(bsi->ext_wake, 1);
 			if (ret)
@@ -432,7 +437,8 @@ static void bluesleep_tx_timer_expire(unsigned long data)
 		bluesleep_tx_idle();
 	} else {
 		BT_DBG("Tx data during last period");
-		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL*HZ));
+		mod_timer(&tx_timer,
+		          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 	}
 
 	/* clear the incoming data flag */
@@ -471,7 +477,7 @@ static void bluesleep_start_wq(struct work_struct *work)
 	}
 
 	/* start the timer */
-	mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
+	mod_timer(&tx_timer, jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 
 	/* assert BT_WAKE */
 	if (bsi->has_ext_wake == 1) {

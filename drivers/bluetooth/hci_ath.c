@@ -39,6 +39,8 @@
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
 
+#include <linux/jiffies.h>
+
 #include <net/bluetooth/bluetooth.h>
 #include <net/bluetooth/hci_core.h>
 
@@ -99,7 +101,7 @@ static void hostwake_interrupt(unsigned long data)
 static void modify_timer_task(void)
 {
 	spin_lock(&rw_lock);
-	mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
+	mod_timer(&tx_timer, jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 	clear_bit(BT_TXEXPIRED, &flags);
 	spin_unlock(&rw_lock);
 
