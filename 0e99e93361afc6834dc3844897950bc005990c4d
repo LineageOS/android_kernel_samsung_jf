@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3fa7e38b_9cdc8b19",
+        "filename": "arch/arm/mach-msm/board-jf_eur.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 4565,
+      "author": {
+        "id": 7880
+      },
+      "writtenOn": "2016-07-06T10:31:22Z",
+      "side": 1,
+      "message": "I took a look at the latest kernel source for GT-I9505G, and it has these set to 0.",
+      "revId": "0e99e93361afc6834dc3844897950bc005990c4d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
