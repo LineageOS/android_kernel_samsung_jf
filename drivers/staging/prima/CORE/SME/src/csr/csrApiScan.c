@@ -5189,7 +5189,8 @@ tANI_BOOLEAN csrScanAgeOutBss(tpAniSirGlobal pMac, tCsrScanResult *pResult)
     {
         //reset the counter so this won't hapeen too soon
         pResult->AgingCount = (tANI_S32)pMac->roam.configParam.agingCount;
-        pResult->Result.BssDescriptor.nReceivedTime = (tANI_TIMESTAMP)palGetTickCount(pMac->hHdd);
+        pResult->Result.BssDescriptor.nReceivedTime =
+                                        vos_timer_get_system_time();
     }
 
     return (fRet);
@@ -6337,8 +6338,9 @@ void csrScanResultAgingTimerHandler(void *pv)
     {
         tListElem *pEntry, *tmpEntry;
         tCsrScanResult *pResult;
-        tANI_TIMESTAMP ageOutTime = (tANI_TIMESTAMP)(csrScanGetAgeOutTime(pMac) * PAL_TICKS_PER_SECOND); //turn it into 10ms units
-        tANI_TIMESTAMP curTime = (tANI_TIMESTAMP)palGetTickCount(pMac->hHdd);
+        v_TIME_t ageOutTime =
+           (v_TIME_t)(pMac->scan.scanResultCfgAgingTime * SYSTEM_TIME_SEC_TO_MSEC);
+        v_TIME_t curTime = vos_timer_get_system_time();
 
         csrLLLock(&pMac->scan.scanResultList);
         pEntry = csrLLPeekHead( &pMac->scan.scanResultList, LL_ACCESS_NOLOCK );
@@ -6362,8 +6364,9 @@ static void csrScanResultCfgAgingTimerHandler(void *pv)
     tpAniSirGlobal pMac = PMAC_STRUCT( pv );
     tListElem *pEntry, *tmpEntry;
     tCsrScanResult *pResult;
-    tANI_TIMESTAMP ageOutTime =  pMac->scan.scanResultCfgAgingTime * PAL_TICKS_PER_SECOND;
-    tANI_TIMESTAMP curTime = (tANI_TIMESTAMP)palGetTickCount(pMac->hHdd);
+    v_TIME_t ageOutTime =
+       (v_TIME_t)(pMac->scan.scanResultCfgAgingTime * SYSTEM_TIME_SEC_TO_MSEC);
+    v_TIME_t curTime = vos_timer_get_system_time();
   
     csrLLLock(&pMac->scan.scanResultList);
     pEntry = csrLLPeekHead( &pMac->scan.scanResultList, LL_ACCESS_NOLOCK );
@@ -7934,7 +7937,7 @@ eHalStatus csrScanSavePreferredNetworkFound(tpAniSirGlobal pMac,
    palCopyMemory( pMac->hHdd, (tANI_U8 *) &pBssDescr->bssId,
                   (tANI_U8 *) macHeader->bssId,
                   sizeof(tSirMacAddr));
-   pBssDescr->nReceivedTime = (tANI_TIMESTAMP)palGetTickCount(pMac->hHdd);
+   pBssDescr->nReceivedTime = vos_timer_get_system_time();
 
    smsLog( pMac, LOG2, "(%s):Bssid= %02x-%02x-%02x-%02x-%02x-%02x "
                        "chan= %d, rssi = %d", __func__,
