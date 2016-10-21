@@ -49,6 +49,8 @@
 #define QSEOS_VERSION_14		0x14
 #define QSEOS_CHECK_VERSION_CMD		0x00001803;
 
+#define U32_MAX   ((u32)~0U)
+
 enum qseecom_command_scm_resp_type {
 	QSEOS_APP_ID = 0xEE01,
 	QSEOS_LISTENER_ID
