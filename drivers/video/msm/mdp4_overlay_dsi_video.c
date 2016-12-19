@@ -393,6 +393,7 @@ void mdp4_dsi_video_wait4vsync(int cndx)
 static void mdp4_dsi_video_wait4dmap(int cndx)
 {
 	struct vsycn_ctrl *vctrl;
+	int wait_ret;
 
 	if (cndx >= MAX_CONTROLLER) {
 		pr_err("%s: out or range: cndx=%d\n", __func__, cndx);
@@ -403,10 +404,11 @@ static void mdp4_dsi_video_wait4dmap(int cndx)
 
 	if (atomic_read(&vctrl->suspend) > 0)
 		return;
-	if (!wait_for_completion_timeout(&vctrl->dmap_comp,
-		msecs_to_jiffies(VSYNC_PERIOD * 4))) {
-			pr_err("%s: dma timeout error\n", __func__);
-	}
+
+	wait_ret = wait_for_completion_timeout(&vctrl->dmap_comp,
+			msecs_to_jiffies(VSYNC_PERIOD * 8));
+	if(!wait_ret)
+		pr_err("%s: timed out waiting!\n", __func__);
 }
 
 
