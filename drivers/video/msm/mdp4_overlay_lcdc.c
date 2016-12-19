@@ -390,6 +390,7 @@ void mdp4_lcdc_wait4vsync(int cndx)
 static void mdp4_lcdc_wait4dmap(int cndx)
 {
 	struct vsycn_ctrl *vctrl;
+	int wait_ret;
 
 	if (cndx >= MAX_CONTROLLER) {
 		pr_err("%s: out or range: cndx=%d\n", __func__, cndx);
@@ -401,7 +402,10 @@ static void mdp4_lcdc_wait4dmap(int cndx)
 	if (atomic_read(&vctrl->suspend) > 0)
 		return;
 
-	wait_for_completion(&vctrl->dmap_comp);
+	wait_ret = wait_for_completion_timeout(&vctrl->dmap_comp,
+			msecs_to_jiffies(VSYNC_PERIOD * 8));
+	if(!wait_ret)
+		pr_err("%s: timed out waiting!\n", __func__);
 }
 
 static void mdp4_lcdc_wait4ov(int cndx)
