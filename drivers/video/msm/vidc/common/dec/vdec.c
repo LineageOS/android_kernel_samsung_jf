@@ -162,7 +162,7 @@ static void vid_dec_handle_field_drop(struct video_client_ctx *client_ctx,
 			VDEC_MSG_EVT_INFO_FIELD_DROPPED;
 		vdec_msg->vdec_msg_info.msgdata.output_frame.time_stamp
 		= time_stamp;
-		DBG("Send FIELD_DROPPED message to client = %p\n", client_ctx);
+		DBG("Send FIELD_DROPPED message to client = %pK\n", client_ctx);
 	} else {
 		ERR("vid_dec_input_frame_done(): invalid event type: "
 			"%d\n", event);
@@ -203,11 +203,11 @@ static void vid_dec_input_frame_done(struct video_client_ctx *client_ctx,
 	if (event == VCD_EVT_RESP_INPUT_DONE) {
 		vdec_msg->vdec_msg_info.msgcode =
 		    VDEC_MSG_RESP_INPUT_BUFFER_DONE;
-		DBG("Send INPUT_DON message to client = %p\n", client_ctx);
+		DBG("Send INPUT_DON message to client = %pK\n", client_ctx);
 
 	} else if (event == VCD_EVT_RESP_INPUT_FLUSHED) {
 		vdec_msg->vdec_msg_info.msgcode = VDEC_MSG_RESP_INPUT_FLUSHED;
-		DBG("Send INPUT_FLUSHED message to client = %p\n", client_ctx);
+		DBG("Send INPUT_FLUSHED message to client = %pK\n", client_ctx);
 	} else {
 		ERR("vid_dec_input_frame_done(): invalid event type: "
 			"%d\n", event);
@@ -292,8 +292,8 @@ static void vid_dec_output_frame_done(struct video_client_ctx *client_ctx,
 						client_ctx->meta_buf_size);
 					DBG("Copying Meta Buffer from "\
 						"secure memory"
-						"kernel_virt_iommu = %p "
-						"kernel_virt = %p",
+						"kernel_virt_iommu = %pK "
+						"kernel_virt = %pK",
 						client_ctx->
 						meta_addr_table[buffer_index].
 						kernel_vir_addr_iommu,
@@ -1127,22 +1127,22 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 			ker_vir_addr;
 		client_ctx->meta_addr_table[index].kernel_vir_addr_iommu =
 			ker_vir_addr_iommu;
-		DBG("[%d] kernel_virtual = %p kernel_vir_iommu = %p",
+		DBG("[%d] kernel_virtual = %pK kernel_vir_iommu = %pK",
 			index, ker_vir_addr, ker_vir_addr_iommu);
 		ker_vir_addr += buf_size;
 		ker_vir_addr_iommu += buf_size;
 	}
 
-	DBG("Meta Buffer: Virt: %p, Phys %p, fd: %d",
+	DBG("Meta Buffer: Virt: %pK, Phys %pK, fd: %d",
 			vcd_meta_buffer->kernel_virtual_addr,
 			vcd_meta_buffer->physical_addr,
 			vcd_meta_buffer->pmem_fd);
-	DBG("IOMMU Meta Buffer: Virt: %p, Phys %p, fd: %d",
+	DBG("IOMMU Meta Buffer: Virt: %pK, Phys %pK, fd: %d",
 			vcd_meta_buffer->kernel_virt_addr_iommu,
 			vcd_meta_buffer->physical_addr_iommu,
 			vcd_meta_buffer->pmem_fd_iommu);
-	DBG("Meta_buffer: Dev addr %p", vcd_meta_buffer->dev_addr);
-	DBG("IOMMU Meta_buffer: Dev addr %p",
+	DBG("Meta_buffer: Dev addr %pK", vcd_meta_buffer->dev_addr);
+	DBG("IOMMU Meta_buffer: Dev addr %pK",
 			vcd_meta_buffer->dev_addr_iommu);
 	vcd_status = vcd_set_property(client_ctx->vcd_handle,
 					  &vcd_property_hdr,
@@ -1290,10 +1290,10 @@ static u32 vid_dec_set_h264_mv_buffers(struct video_client_ctx *client_ctx,
 			vcd_h264_mv_buffer->dev_addr = (u8 *) iova;
 		}
 	}
-	DBG("Virt: %p, Phys %p, fd: %d", vcd_h264_mv_buffer->
+	DBG("Virt: %pK, Phys %pK, fd: %d", vcd_h264_mv_buffer->
 		kernel_virtual_addr, vcd_h264_mv_buffer->physical_addr,
 		vcd_h264_mv_buffer->pmem_fd);
-	DBG("Dev addr %p", vcd_h264_mv_buffer->dev_addr);
+	DBG("Dev addr %pK", vcd_h264_mv_buffer->dev_addr);
 	vcd_status = vcd_set_property(client_ctx->vcd_handle,
 				      &vcd_property_hdr, vcd_h264_mv_buffer);
 
@@ -1516,7 +1516,7 @@ static u32 vid_dec_set_buffer(struct video_client_ctx *client_ctx,
 		(unsigned long)buffer_info->buffer.bufferaddr,
 		&kernel_vaddr, buffer_info->buffer.pmem_fd,
 		buf_adr_offset, MAX_VIDEO_NUM_OF_BUFF, length)) {
-		DBG("%s() : user_virt_addr = %p cannot be set.",
+		DBG("%s() : user_virt_addr = %pK cannot be set.",
 		    __func__, buffer_info->buffer.bufferaddr);
 		return false;
 	}
@@ -1551,7 +1551,7 @@ static u32 vid_dec_free_buffer(struct video_client_ctx *client_ctx,
 	if (!vidc_delete_addr_table(client_ctx, dir_buffer,
 				(unsigned long)buffer_info->buffer.bufferaddr,
 				&kernel_vaddr)) {
-		DBG("%s() : user_virt_addr = %p has not been set.",
+		DBG("%s() : user_virt_addr = %pK has not been set.",
 		    __func__, buffer_info->buffer.bufferaddr);
 		return true;
 	}
@@ -1574,11 +1574,11 @@ static u32 vid_dec_pause_resume(struct video_client_ctx *client_ctx, u32 pause)
 	}
 
 	if (pause) {
-		DBG("msm_vidc_dec: PAUSE command from client = %p\n",
+		DBG("msm_vidc_dec: PAUSE command from client = %pK\n",
 			 client_ctx);
 		vcd_status = vcd_pause(client_ctx->vcd_handle);
 	} else{
-		DBG("msm_vidc_dec: RESUME command from client = %p\n",
+		DBG("msm_vidc_dec: RESUME command from client = %pK\n",
 			 client_ctx);
 		vcd_status = vcd_resume(client_ctx->vcd_handle);
 	}
@@ -1621,7 +1621,7 @@ static u32 vid_dec_start_stop(struct video_client_ctx *client_ctx, u32 start)
 
 			wake_up(&client_ctx->msg_wait);
 
-			DBG("Send START_DONE message to client = %p\n",
+			DBG("Send START_DONE message to client = %pK\n",
 			    client_ctx);
 
 		} else {
@@ -1651,7 +1651,7 @@ static u32 vid_dec_start_stop(struct video_client_ctx *client_ctx, u32 start)
 			mutex_unlock(&vid_dec_device_p->lock);
 			return false;
 		}
-		DBG("Send STOP_DONE message to client = %p\n", client_ctx);
+		DBG("Send STOP_DONE message to client = %pK\n", client_ctx);
 		mutex_unlock(&vid_dec_device_p->lock);
 	}
 	return true;
@@ -2650,7 +2650,7 @@ int vid_dec_open_client(struct video_client_ctx **vid_clnt_ctx, int flags)
 		goto client_failure;
 	}
 
-	DBG(" Virtual Address of ioremap is %p\n", vid_dec_device_p->virt_base);
+	DBG(" Virtual Address of ioremap is %pK\n", vid_dec_device_p->virt_base);
 	if (!vid_dec_device_p->num_clients) {
 		if (!vidc_load_firmware()) {
 			rc = -ENOMEM;

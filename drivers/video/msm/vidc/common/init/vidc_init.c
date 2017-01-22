@@ -580,7 +580,7 @@ u32 vidc_lookup_addr_table(struct video_client_ctx *client_ctx,
 			if (*user_vaddr == buf_addr_table[i].user_vaddr) {
 				*kernel_vaddr = buf_addr_table[i].kernel_vaddr;
 				found = true;
-				DBG("%s() : client_ctx = %p."
+				DBG("%s() : client_ctx = %pK."
 				" user_virt_addr = 0x%08lx is found",
 				__func__, client_ctx, *user_vaddr);
 				break;
@@ -589,7 +589,7 @@ u32 vidc_lookup_addr_table(struct video_client_ctx *client_ctx,
 			if (*kernel_vaddr == buf_addr_table[i].kernel_vaddr) {
 				*user_vaddr = buf_addr_table[i].user_vaddr;
 				found = true;
-				DBG("%s() : client_ctx = %p."
+				DBG("%s() : client_ctx = %pK."
 				" kernel_virt_addr = 0x%08lx is found",
 				__func__, client_ctx, *kernel_vaddr);
 				break;
@@ -605,22 +605,22 @@ u32 vidc_lookup_addr_table(struct video_client_ctx *client_ctx,
 
 		if (search_with_user_vaddr)
 			DBG("kernel_vaddr = 0x%08lx, phy_addr = 0x%08lx "
-			" pmem_fd = %d, struct *file	= %p "
+			" pmem_fd = %d, struct *file	= %pK "
 			"buffer_index = %d\n", *kernel_vaddr,
 			*phy_addr, *pmem_fd, *file, *buffer_index);
 		else
 			DBG("user_vaddr = 0x%08lx, phy_addr = 0x%08lx "
-			" pmem_fd = %d, struct *file	= %p "
+			" pmem_fd = %d, struct *file	= %pK "
 			"buffer_index = %d\n", *user_vaddr, *phy_addr,
 			*pmem_fd, *file, *buffer_index);
 		mutex_unlock(&client_ctx->enrty_queue_lock);
 		return true;
 	} else {
 		if (search_with_user_vaddr)
-			DBG("%s() : client_ctx = %p user_virt_addr = 0x%08lx"
+			DBG("%s() : client_ctx = %pK user_virt_addr = 0x%08lx"
 			" Not Found.\n", __func__, client_ctx, *user_vaddr);
 		else
-			DBG("%s() : client_ctx = %p kernel_virt_addr = 0x%08lx"
+			DBG("%s() : client_ctx = %pK kernel_virt_addr = 0x%08lx"
 			" Not Found.\n", __func__, client_ctx,
 			*kernel_vaddr);
 		mutex_unlock(&client_ctx->enrty_queue_lock);
@@ -694,7 +694,7 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 		user_vaddr != buf_addr_table[i].user_vaddr)
 		i++;
 	if (i < *num_of_buffers) {
-		DBG("%s() : client_ctx = %p."
+		DBG("%s() : client_ctx = %pK."
 			" user_virt_addr = 0x%08lx already set",
 			__func__, client_ctx, user_vaddr);
 		goto bail_out_add;
@@ -786,7 +786,7 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 		buf_addr_table[*num_of_buffers].buff_ion_flag =
 						ionflag;
 		*num_of_buffers = *num_of_buffers + 1;
-		DBG("%s() : client_ctx = %p, user_virt_addr = 0x%08lx, "
+		DBG("%s() : client_ctx = %pK, user_virt_addr = 0x%08lx, "
 			"kernel_vaddr = 0x%08lx phys_addr=%lu inserted!",
 			__func__, client_ctx, user_vaddr, *kernel_vaddr,
 			phys_addr);
@@ -845,7 +845,7 @@ u32 vidc_insert_addr_table_kernel(struct video_client_ctx *client_ctx,
 		i++;
 	}
 	if (i < *num_of_buffers) {
-		DBG("%s() : client_ctx = %p."
+		DBG("%s() : client_ctx = %pK."
 			" user_virt_addr = 0x%08lx already set",
 			__func__, client_ctx, user_vaddr);
 		goto bail_out_add;
@@ -862,7 +862,7 @@ u32 vidc_insert_addr_table_kernel(struct video_client_ctx *client_ctx,
 		buf_addr_table[*num_of_buffers].phy_addr = phys_addr;
 		buf_addr_table[*num_of_buffers].buff_ion_handle = NULL;
 		*num_of_buffers = *num_of_buffers + 1;
-		DBG("%s() : client_ctx = %p, user_virt_addr = 0x%08lx, "
+		DBG("%s() : client_ctx = %pK, user_virt_addr = 0x%08lx, "
 			"kernel_vaddr = 0x%08lx inserted!", __func__,
 			client_ctx, user_vaddr, kernel_vaddr);
 	}
@@ -903,7 +903,7 @@ u32 vidc_delete_addr_table(struct video_client_ctx *client_ctx,
 		user_vaddr != buf_addr_table[i].user_vaddr)
 		i++;
 	if (i == *num_of_buffers) {
-		pr_err("%s() : client_ctx = %p."
+		pr_err("%s() : client_ctx = %pK."
 			" user_virt_addr = 0x%08lx NOT found",
 			__func__, client_ctx, user_vaddr);
 		goto bail_out_del;
@@ -947,7 +947,7 @@ u32 vidc_delete_addr_table(struct video_client_ctx *client_ctx,
 			buf_addr_table[*num_of_buffers - 1].buff_ion_handle;
 	}
 	*num_of_buffers = *num_of_buffers - 1;
-	DBG("%s() : client_ctx = %p."
+	DBG("%s() : client_ctx = %pK."
 		" user_virt_addr = 0x%08lx is found and deleted",
 		__func__, client_ctx, user_vaddr);
 	mutex_unlock(&client_ctx->enrty_queue_lock);

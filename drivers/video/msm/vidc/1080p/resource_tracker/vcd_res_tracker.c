@@ -589,7 +589,7 @@ u32 res_trk_set_perf_level(u32 req_perf_lvl, u32 *pn_set_perf_lvl,
 		!resource_context.vidc_platform_data->disable_turbo;
 
 	if (!pn_set_perf_lvl || !dev_ctxt) {
-		VCDRES_MSG_ERROR("%s(): NULL pointer! dev_ctxt(%p)\n",
+		VCDRES_MSG_ERROR("%s(): NULL pointer! dev_ctxt(%pK)\n",
 			__func__, dev_ctxt);
 		return false;
 	}
@@ -597,7 +597,7 @@ u32 res_trk_set_perf_level(u32 req_perf_lvl, u32 *pn_set_perf_lvl,
 	VCDRES_MSG_LOW("%s(), req_perf_lvl = %d", __func__, req_perf_lvl);
 
 	if (!turbo_supported && req_perf_lvl > RESTRK_1080P_MAX_PERF_LEVEL) {
-		VCDRES_MSG_ERROR("%s(): Turbo not supported! dev_ctxt(%p)\n",
+		VCDRES_MSG_ERROR("%s(): Turbo not supported! dev_ctxt(%pK)\n",
 			__func__, dev_ctxt);
 	}
 

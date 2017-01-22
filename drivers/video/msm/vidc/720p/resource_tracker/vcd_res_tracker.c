@@ -455,7 +455,7 @@ u32 res_trk_set_perf_level(u32 req_perf_lvl, u32 *pn_set_perf_lvl,
 	u8 enc_clnt_present = false;
 
 	if (!pn_set_perf_lvl || !dev_ctxt) {
-		VCDRES_MSG_ERROR("%s(): NULL pointer! dev_ctxt(%p)\n",
+		VCDRES_MSG_ERROR("%s(): NULL pointer! dev_ctxt(%pK)\n",
 			__func__, dev_ctxt);
 		return false;
 	}
@@ -471,7 +471,7 @@ u32 res_trk_set_perf_level(u32 req_perf_lvl, u32 *pn_set_perf_lvl,
 
 	cctxt_itr = dev_ctxt->cctxt_list_head;
 	while (cctxt_itr) {
-		VCDRES_MSG_LOW("\n cctxt_itr = %p", cctxt_itr);
+		VCDRES_MSG_LOW("\n cctxt_itr = %pK", cctxt_itr);
 		if (!cctxt_itr->decoding) {
 				VCDRES_MSG_LOW("\n Encoder client");
 				enc_clnt_present = true;

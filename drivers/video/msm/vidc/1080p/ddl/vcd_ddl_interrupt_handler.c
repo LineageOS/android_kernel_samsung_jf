@@ -1892,7 +1892,7 @@ static void ddl_handle_slice_done_slice_batch(struct ddl_client_context *ddl)
 			stream_buffer_size);
 		output_frame = &(
 			encoder->batch_frame.output_frame[actual_idx].vcd_frm);
-		DDL_MSG_LOW("OutBfr: vcd_frm %p frmbfr(virtual) 0x%x"
+		DDL_MSG_LOW("OutBfr: vcd_frm %pK frmbfr(virtual) 0x%x"
 			"frmbfr(physical) 0x%x\n",
 			output_frame,
 			(u32)output_frame->virtual,
@@ -1980,7 +1980,7 @@ static u32 ddl_handle_enc_frame_done_slice_mode(
 			stream_buffer_size);
 		output_frame =
 		&(encoder->batch_frame.output_frame[actual_idx].vcd_frm);
-		DDL_MSG_LOW("OutBfr: vcd_frm %p frmbfr(virtual) 0x%x"
+		DDL_MSG_LOW("OutBfr: vcd_frm %pK frmbfr(virtual) 0x%x"
 				"frmbfr(physical) 0x%x",
 				output_frame,
 				(u32)output_frame->virtual,

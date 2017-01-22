@@ -765,18 +765,18 @@ u32 vcd_free_one_buffer_internal(
 
 	buf_entry = vcd_find_buffer_pool_entry(buf_pool, buffer);
 	if (!buf_entry) {
-		VCD_MSG_ERROR("Buffer addr %p not found. Can't free buffer",
+		VCD_MSG_ERROR("Buffer addr %pK not found. Can't free buffer",
 				  buffer);
 
 		return VCD_ERR_ILLEGAL_PARM;
 	}
 	if (buf_entry->in_use) {
-		VCD_MSG_ERROR("Buffer is in use and is not flushed: %p, %d\n",
+		VCD_MSG_ERROR("Buffer is in use and is not flushed: %pK, %d\n",
 			buf_entry, buf_entry->in_use);
 		return VCD_ERR_ILLEGAL_OP;
 	}
 
-	VCD_MSG_LOW("Freeing buffer %p. Allocated %d",
+	VCD_MSG_LOW("Freeing buffer %pK. Allocated %d",
 			buf_entry->virtual, buf_entry->allocated);
 
 	if (buf_entry->allocated) {
@@ -950,7 +950,7 @@ u32 vcd_buffer_pool_entry_en_q(
 	if (list_itr == entry) {
 		VCD_MSG_HIGH("\n this output buffer is already present"
 			" in queue");
-		VCD_MSG_HIGH("\n Vir Addr %p Phys Addr %p",
+		VCD_MSG_HIGH("\n Vir Addr %pK Phys Addr %pK",
 			entry->virtual, entry->physical);
 		return false;
 	}
@@ -1482,8 +1482,8 @@ u32 vcd_schedule_frame(struct vcd_dev_ctxt *dev_ctxt,
 	  return false;
 	}
 	if (!*cctxt || !*ip_buf_entry) {
-		VCD_MSG_FATAL("Sched returned invalid values. ctxt=%p,"
-			"ipbuf=%p",	*cctxt, *ip_buf_entry);
+		VCD_MSG_FATAL("Sched returned invalid values. ctxt=%pK,"
+			"ipbuf=%pK",	*cctxt, *ip_buf_entry);
 		return false;
 	}
 	return true;
@@ -1591,9 +1591,9 @@ u32 vcd_submit_frame(struct vcd_dev_ctxt *dev_ctxt,
 			cctxt->out_buf_pool.in_use++;
 			ddl_op_frm[out_buf_cnt].vcd_frm = op_buf_entry->frame;
 			VCD_MSG_LOW("%s : buffer_cnt = %d framebfr(virtual)"
-				" 0x%p", __func__, out_buf_cnt,
+				" 0x%pK", __func__, out_buf_cnt,
 				op_buf_entry->frame.virtual);
-			VCD_MSG_LOW("framebfr(physical) 0x%p bfrlength %d",
+			VCD_MSG_LOW("framebfr(physical) 0x%pK bfrlength %d",
 				op_buf_entry->frame.physical,
 				op_buf_entry->frame.alloc_len);
 		}
@@ -1741,7 +1741,7 @@ void vcd_send_frame_done_in_eos_for_dec(
 	buf_entry = vcd_find_buffer_pool_entry(&cctxt->out_buf_pool,
 		ddl_frm.vcd_frm.virtual);
 	if (!buf_entry) {
-		VCD_MSG_ERROR("Unrecognized buffer address provided = %p",
+		VCD_MSG_ERROR("Unrecognized buffer address provided = %pK",
 				  ddl_frm.vcd_frm.virtual);
 		return;
 	} else {
@@ -1820,7 +1820,7 @@ struct vcd_transc *vcd_get_first_in_use_trans_for_clnt(
 	while (i < dev_ctxt->trans_tbl_size) {
 		if ((cctxt == dev_ctxt->trans_tbl[i].cctxt) &&
 			(dev_ctxt->trans_tbl[i].in_use)) {
-			VCD_MSG_MED("%s: found transc = 0x%p",
+			VCD_MSG_MED("%s: found transc = 0x%pK",
 				__func__, &dev_ctxt->trans_tbl[i]);
 			break;
 		}
@@ -2343,7 +2343,7 @@ u32 vcd_handle_frame_done(
 			vcd_handle_clnt_fatal(cctxt, op_frm->frm_trans_end);
 			rc = VCD_ERR_BAD_POINTER;
 		} else if (!op_buf_entry->in_use) {
-			VCD_MSG_ERROR("Bad output buffer 0x%p recvd from DDL",
+			VCD_MSG_ERROR("Bad output buffer 0x%pK recvd from DDL",
 					  op_buf_entry->frame.virtual);
 			vcd_handle_clnt_fatal(cctxt, op_frm->frm_trans_end);
 			rc = VCD_ERR_BAD_POINTER;
@@ -2881,7 +2881,7 @@ u32 vcd_handle_input_frame(
 
 	VCD_MSG_LOW("vcd_handle_input_frame:");
 
-	VCD_MSG_LOW("input buffer: addr=(0x%p), sz=(%d), len=(%d)",
+	VCD_MSG_LOW("input buffer: addr=(0x%pK), sz=(%d), len=(%d)",
 			input_frame->virtual, input_frame->alloc_len,
 			input_frame->data_len);
 
@@ -2923,7 +2923,7 @@ u32 vcd_handle_input_frame(
 	orig_frame = vcd_find_buffer_pool_entry(&cctxt->in_buf_pool,
 						 input_frame->virtual);
 	if (!orig_frame) {
-		VCD_MSG_ERROR("Bad buffer addr: %p", input_frame->virtual);
+		VCD_MSG_ERROR("Bad buffer addr: %pK", input_frame->virtual);
 		return VCD_ERR_FAIL;
 	}
 
@@ -3289,7 +3289,7 @@ struct vcd_buffer_entry *vcd_check_fill_output_buffer
 	buf_entry =
 		vcd_find_buffer_pool_entry(buf_pool, buffer->virtual);
 	if (!buf_entry) {
-		VCD_MSG_ERROR("Unrecognized buffer address provided = %p",
+		VCD_MSG_ERROR("Unrecognized buffer address provided = %pK",
 				  buffer->virtual);
 		return NULL;
 	}
@@ -3433,7 +3433,7 @@ u32 vcd_check_if_buffer_req_met(struct vcd_clnt_ctxt *cctxt,
 			buf_pool->buf_req.sz) {
 			VCD_MSG_ERROR(
 				"BufReq sz not met:\
-					addr=(0x%p) sz=%d ReqSize=%d",
+					addr=(0x%pK) sz=%d ReqSize=%d",
 				buf_pool->entries[i].virtual,
 				buf_pool->entries[i].sz,
 				buf_pool->buf_req.sz);

@@ -777,7 +777,7 @@ static u32 vcd_fill_output_buffer_cmn
 	u32 result = true;
 	u32 handled = true;
 	if (!cctxt || !buffer) {
-		VCD_MSG_ERROR("%s(): Inavlid params cctxt %p buffer %p",
+		VCD_MSG_ERROR("%s(): Inavlid params cctxt %pK buffer %pK",
 					__func__, cctxt, buffer);
 		return VCD_ERR_BAD_POINTER;
 	}
@@ -880,7 +880,7 @@ static void vcd_clnt_cb_in_starting
 		(struct vcd_transc *)client_data;
 	VCD_MSG_LOW("vcd_clnt_cb_in_starting:");
 	if (cctxt->ddl_handle != ddl_handle) {
-		VCD_MSG_ERROR("vcd_clnt_cb_in_initing: Wrong DDL handle %p",
+		VCD_MSG_ERROR("vcd_clnt_cb_in_initing: Wrong DDL handle %pK",
 			ddl_handle);
 		return;
 	}
@@ -1642,7 +1642,7 @@ void vcd_do_client_state_transition(struct vcd_clnt_ctxt *cctxt,
 	struct vcd_clnt_state_ctxt *state_ctxt;
 
 	if (!cctxt || to_state >= VCD_CLIENT_STATE_MAX) {
-		VCD_MSG_ERROR("Bad parameters. cctxt=%p, to_state=%d",
+		VCD_MSG_ERROR("Bad parameters. cctxt=%pK, to_state=%d",
 			      cctxt, to_state);
 		return;
 	}

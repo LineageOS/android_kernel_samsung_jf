@@ -237,7 +237,7 @@ void ddl_pmem_free(struct ddl_buf_addr *buff_addr)
 	struct ddl_context *ddl_context;
 	ddl_context = ddl_get_context();
 	if (!buff_addr) {
-		ERR("\n %s() invalid arguments %p", __func__, buff_addr);
+		ERR("\n %s() invalid arguments %pK", __func__, buff_addr);
 		return;
 	}
 	DBG("ddl_pmem_free: phys(0x%x) align_phys(0x%x), "\

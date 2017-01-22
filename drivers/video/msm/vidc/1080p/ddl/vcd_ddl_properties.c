@@ -360,8 +360,8 @@ static u32 ddl_set_dec_property(struct ddl_client_context *ddl,
 		u8 *virt_addr;
 		struct vcd_property_meta_buffer *meta_buffer =
 			(struct vcd_property_meta_buffer *) property_value;
-		DDL_MSG_LOW("Entered VCD_I_SET_EXT_METABUFFER Virt: %p,"\
-					"Phys %p, fd: %d size: %d count: %d",
+		DDL_MSG_LOW("Entered VCD_I_SET_EXT_METABUFFER Virt: %pK,"\
+					"Phys %pK, fd: %d size: %d count: %d",
 					meta_buffer->kernel_virtual_addr,
 					meta_buffer->physical_addr,
 					meta_buffer->pmem_fd,
@@ -395,7 +395,7 @@ static u32 ddl_set_dec_property(struct ddl_client_context *ddl,
 
 				DDL_MSG_LOW("Meta Buffer: "\
 							"Assigned %d buffer for "
-							"virt: %p, phys %p for "
+							"virt: %pK, phys %pK for "
 							"meta_buffers "
 							"of size: %d\n",
 							index, virt_addr,
@@ -416,7 +416,7 @@ static u32 ddl_set_dec_property(struct ddl_client_context *ddl,
 		struct vcd_property_h264_mv_buffer *mv_buff =
 			(struct vcd_property_h264_mv_buffer *)
 		property_value;
-		DDL_MSG_LOW("Entered VCD_I_H264_MV_BUFFER Virt: %p, Phys %p,"
+		DDL_MSG_LOW("Entered VCD_I_H264_MV_BUFFER Virt: %pK, Phys %pK,"
 					"fd: %d size: %d count: %d\n",
 					mv_buff->kernel_virtual_addr,
 					mv_buff->physical_addr,
@@ -449,7 +449,7 @@ static u32 ddl_set_dec_property(struct ddl_client_context *ddl,
 					h264_mv[index].virtual_base_addr
 					= virt_addr;
 				DDL_MSG_LOW("Assigned %d buffer for "
-							"virt: %p, phys %p for "
+							"virt: %pK, phys %pK for "
 							"h264_mv_buffers "
 							"of size: %d\n",
 							index, virt_addr,
@@ -1014,8 +1014,8 @@ static u32 ddl_set_enc_property(struct ddl_client_context *ddl,
 					align_virtual_addr =
 					recon_buffers->kernel_virtual_addr +
 					recon_buffers->ysize;
-				DDL_MSG_LOW("Y::KVirt: %p, KPhys: %p "\
-					"UV::KVirt: %p, KPhys: %p\n",
+				DDL_MSG_LOW("Y::KVirt: %pK, KPhys: %pK "\
+					"UV::KVirt: %pK, KPhys: %pK\n",
 				encoder->hw_bufs.dpb_y[index_hw_bufs].
 				align_virtual_addr,
 				encoder->hw_bufs.dpb_y[index_hw_bufs].
