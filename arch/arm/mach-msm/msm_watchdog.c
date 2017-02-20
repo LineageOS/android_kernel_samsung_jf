@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2013, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2010-2013,2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -10,7 +10,6 @@
  * GNU General Public License for more details.
  *
  */
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -24,6 +23,7 @@
 #include <linux/percpu.h>
 #include <linux/interrupt.h>
 #include <linux/reboot.h>
+#include <linux/kthread.h>
 #include <asm/fiq.h>
 #include <asm/hardware/gic.h>
 #include <mach/msm_iomap.h>
@@ -31,6 +31,7 @@
 #include <asm/cacheflush.h>
 #include <mach/scm.h>
 #include <mach/socinfo.h>
+
 #include "msm_watchdog.h"
 #include "timer.h"
 
@@ -55,6 +56,11 @@ static unsigned long bark_time;
 static unsigned long long last_pet;
 static bool has_vic;
 static unsigned int msm_wdog_irq;
+
+/* Create a thread for watchdog pet */
+static struct task_struct *watchdog_task;
+struct timer_list pet_timer;
+static struct completion pet_complete;
 
 /*
  * On the kernel command line specify
@@ -110,9 +116,7 @@ static void *scm_regsave;
 
 static struct msm_watchdog_pdata __percpu **percpu_pdata;
 
-static void pet_watchdog_work(struct work_struct *work);
 static void init_watchdog_work(struct work_struct *work);
-static DECLARE_DELAYED_WORK(dogwork_struct, pet_watchdog_work);
 static DECLARE_WORK(init_dogwork_struct, init_watchdog_work);
 
 /* Called from the FIQ bark handler */
@@ -210,7 +214,9 @@ static void wdog_disable_work(struct work_struct *work)
 	enable = 0;
 	atomic_notifier_chain_unregister(&panic_notifier_list, &panic_blk);
 	unregister_reboot_notifier(&msm_reboot_notifier);
-	cancel_delayed_work(&dogwork_struct);
+	del_timer_sync(&pet_timer);
+	kthread_stop(watchdog_task);
+
 	/* may be suspended after the first write above */
 	__raw_writel(0, msm_wdt_base + WDT_EN);
 	complete(&work_data->complete);
@@ -286,12 +292,30 @@ void pet_watchdog(void)
 	last_pet = time_ns;
 }
 
-static void pet_watchdog_work(struct work_struct *work)
+static void pet_task_wakeup(unsigned long data)
 {
-	pet_watchdog();
+	complete(&pet_complete);
+}
 
-	if (enable)
-		schedule_delayed_work_on(0, &dogwork_struct, delay_time);
+static int watchdog_kthread(void *arg)
+{
+	struct msm_watchdog_pdata *pdata = (struct msm_watchdog_pdata *) arg;
+	unsigned long delay = 0;
+	struct sched_param param = {.sched_priority = MAX_RT_PRIO-1};
+	sched_setscheduler(current, SCHED_FIFO, &param);
+
+	while (!kthread_should_stop()) {
+		while (wait_for_completion_interruptible(&pet_complete) != 0)
+			;
+		pet_complete.done = 0;
+		if (enable) {
+			pet_watchdog();
+			delay = msecs_to_jiffies(pdata->pet_time);
+			mod_timer(&pet_timer, jiffies + delay);
+		}
+	}
+
+	return 0;
 }
 
 static irqreturn_t wdog_bark_handler(int irq, void *dev_id)
@@ -429,7 +453,13 @@ static void init_watchdog_work(struct work_struct *work)
 	__raw_writel(timeout, msm_wdt_base + WDT_BARK_TIME);
 	__raw_writel(timeout + 3*WDT_HZ, msm_wdt_base + WDT_BITE_TIME);
 
-	schedule_delayed_work_on(0, &dogwork_struct, delay_time);
+	init_completion(&pet_complete);
+	wake_up_process(watchdog_task);
+	init_timer(&pet_timer);
+	pet_timer.data = (unsigned long)percpu_pdata;
+	pet_timer.function = pet_task_wakeup;
+	pet_timer.expires = jiffies + delay_time;
+	add_timer(&pet_timer);
 
 	atomic_notifier_chain_register(&panic_notifier_list,
 				       &panic_blk);
@@ -453,6 +483,7 @@ static void init_watchdog_work(struct work_struct *work)
 static int msm_watchdog_probe(struct platform_device *pdev)
 {
 	struct msm_watchdog_pdata *pdata = pdev->dev.platform_data;
+	int ret;
 
 	if (!enable || !pdata || !pdata->pet_time || !pdata->bark_time) {
 		printk(KERN_INFO "MSM Watchdog Not Initialized\n");
@@ -485,8 +516,17 @@ static int msm_watchdog_probe(struct platform_device *pdev)
 		__raw_writel(0x1, MSM_CLK_CTL_BASE + 0x3820);
 
 	delay_time = msecs_to_jiffies(pdata->pet_time);
+	/* Thread to pet the timer */
+	watchdog_task = kthread_create(watchdog_kthread, pdata, "msm_watchdog");
+	if (IS_ERR(watchdog_task)) {
+		ret = PTR_ERR(watchdog_task);
+		goto err;
+	}
 	schedule_work_on(0, &init_dogwork_struct);
 	return 0;
+
+err:
+	return ret;
 }
 
 static const struct dev_pm_ops msm_watchdog_dev_pm_ops = {
