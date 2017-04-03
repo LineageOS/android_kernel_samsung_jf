@@ -3210,6 +3210,7 @@ static uint16_t msm_mpm_bypassed_apps_irqs[] __initdata = {
 	LPASS_SCSS_GP_HIGH_IRQ,
 	SPS_MTI_30,
 	SPS_MTI_31,
+	A2_BAM_IRQ,
 	RIVA_APSS_SPARE_IRQ,
 	RIVA_APPS_WLAN_SMSM_IRQ,
 	RIVA_APPS_WLAN_RX_DATA_AVAIL_IRQ,
