@@ -313,7 +313,7 @@ int pcim_iomap_regions(struct pci_dev *pdev, int mask, const char *name)
 	if (!iomap)
 		return -ENOMEM;
 
-	for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
+	for (i = 0; i < PCIM_IOMAP_MAX; i++) {
 		unsigned long len;
 
 		if (!(mask & (1 << i)))

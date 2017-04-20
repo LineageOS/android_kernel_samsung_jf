@@ -28,6 +28,10 @@
 #include "devices-msm8x60.h"
 #include "board-8064.h"
 
+#ifdef CONFIG_FORCE_FAST_CHARGE
+#include <linux/fastchg.h>
+#endif
+
 #if defined(CONFIG_BATTERY_SAMSUNG)
 #include <linux/battery/sec_battery.h>
 #include <linux/battery/sec_fuelgauge.h>
@@ -301,8 +305,8 @@ static int sec_bat_get_cable_from_extended_cable_type(
 			break;
 		case ONLINE_SUB_TYPE_SMART_OTG:
 				cable_type = POWER_SUPPLY_TYPE_USB;
-				charge_current_max = 1000;
-				charge_current = 1000;
+				charge_current_max = 1600;
+				charge_current = 1600;
 				break;
 		case ONLINE_SUB_TYPE_SMART_NOTG:
 				cable_type = POWER_SUPPLY_TYPE_MAINS;
@@ -319,6 +323,53 @@ static int sec_bat_get_cable_from_extended_cable_type(
 		cable_type = cable_main;
 		break;
 	}
+
+#ifdef CONFIG_FORCE_FAST_CHARGE
+	/* We are in basic Fast Charge mode, so we substitute AC to USB
+	   levels */
+	if (force_fast_charge == FAST_CHARGE_FORCE_AC) {
+		switch(cable_type) {
+			/* These are low current USB connections,
+			   apply normal 1.6A AC levels to USB */
+			case POWER_SUPPLY_TYPE_USB:
+			case POWER_SUPPLY_TYPE_USB_ACA:
+			case POWER_SUPPLY_TYPE_CARDOCK:
+			case POWER_SUPPLY_TYPE_OTG:
+				charge_current_max = USB_CHARGE_1600;
+				charge_current     = USB_CHARGE_1600;
+				break;
+
+		}
+	/* We are in advanced Fast Charge mode, so we apply custom charging
+	   levels for both AC and USB */
+	} else if (force_fast_charge == FAST_CHARGE_FORCE_CUSTOM_MA) {
+		switch(cable_type) {
+			/* These are USB connections, apply custom USB current
+			   for all of them */
+			case POWER_SUPPLY_TYPE_USB:
+			case POWER_SUPPLY_TYPE_USB_DCP:
+			case POWER_SUPPLY_TYPE_USB_CDP:
+			case POWER_SUPPLY_TYPE_USB_ACA:
+			case POWER_SUPPLY_TYPE_CARDOCK:
+			case POWER_SUPPLY_TYPE_OTG:
+				charge_current_max = usb_charge_level;
+				charge_current     = usb_charge_level;
+				break;
+			/* These are AC connections, apply custom AC current
+			   for all of them */
+			case POWER_SUPPLY_TYPE_MAINS:
+				charge_current_max = ac_charge_level;
+				/* but never go above 1.9A */
+				charge_current     =
+					min(ac_charge_level, MAX_CHARGE_LEVEL);
+				break;
+			/* Don't do anything for any other kind of connections
+			   and don't touch when type is unknown */
+			default:
+				break;
+		}
+	}
+#endif
 
 	if (charge_current_max == 0) {
 		charge_current_max =
