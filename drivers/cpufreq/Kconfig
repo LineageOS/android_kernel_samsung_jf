@@ -125,6 +125,12 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASSH3
 	help
 	  Use the CPUFreq governor 'slp' as default.
 
+config CPU_FREQ_DEFAULT_GOV_DANCEDANCE
+	bool "dancedance"
+	select CPU_FREQ_GOV_DANCEDANCE
+	help
+	  Use the CPUFreq governor 'slp' as default.
+
 
 endchoice
 
@@ -228,6 +234,12 @@ config CPU_FREQ_GOV_SMARTASSH3
 	depends on CPU_FREQ
 	help
     		'smartassH3' - a "smart" governor
+
+config CPU_FREQ_GOV_DANCEDANCE
+	tristate "'dancedance' cpufreq governor"
+	depends on CPU_FREQ
+	help
+    		'dancedance' - the best governor
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86
