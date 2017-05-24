@@ -45,10 +45,6 @@ static DEFINE_SPINLOCK(list_lock);
 static LIST_HEAD(inactive_locks);
 static struct list_head active_wake_locks[WAKE_LOCK_TYPE_COUNT];
 static int current_event_num;
-static int suspend_sys_sync_count;
-static DEFINE_SPINLOCK(suspend_sys_sync_lock);
-static struct workqueue_struct *suspend_sys_sync_work_queue;
-static DECLARE_COMPLETION(suspend_sys_sync_comp);
 struct workqueue_struct *suspend_work_queue;
 struct wake_lock main_wake_lock;
 suspend_state_t requested_suspend_state = PM_SUSPEND_MEM;
@@ -301,77 +297,6 @@ long has_wake_lock(int type)
 	return ret;
 }
 
-static bool is_suspend_sys_sync_waiting;
-static void suspend_sys_sync_handler(unsigned long);
-static DEFINE_TIMER(suspend_sys_sync_timer, suspend_sys_sync_handler, 0, 0);
-static void suspend_sys_sync(struct work_struct *work)
-{
-	if (debug_mask & DEBUG_SUSPEND)
-		pr_info("PM: Syncing filesystems...\n");
-
-	sys_sync();
-
-	if (debug_mask & DEBUG_SUSPEND)
-		pr_info("sync done.\n");
-
-	spin_lock(&suspend_sys_sync_lock);
-	suspend_sys_sync_count--;
-	if (is_suspend_sys_sync_waiting && (suspend_sys_sync_count == 0)) {
-		complete(&suspend_sys_sync_comp);
-		del_timer(&suspend_sys_sync_timer);
-	}
-	spin_unlock(&suspend_sys_sync_lock);
-}
-static DECLARE_WORK(suspend_sys_sync_work, suspend_sys_sync);
-
-void suspend_sys_sync_queue(void)
-{
-	int ret;
-
-	spin_lock(&suspend_sys_sync_lock);
-	ret = queue_work(suspend_sys_sync_work_queue, &suspend_sys_sync_work);
-	if (ret)
-		suspend_sys_sync_count++;
-	spin_unlock(&suspend_sys_sync_lock);
-}
-
-static bool suspend_sys_sync_abort;
-/* value should be less then half of input event wake lock timeout value
- * which is currently set to 5*HZ (see drivers/input/evdev.c)
- */
-#define SUSPEND_SYS_SYNC_TIMEOUT (HZ/4)
-static void suspend_sys_sync_handler(unsigned long arg)
-{
-	if (suspend_sys_sync_count == 0) {
-		complete(&suspend_sys_sync_comp);
-	} else if (has_wake_lock(WAKE_LOCK_SUSPEND)) {
-		suspend_sys_sync_abort = true;
-		complete(&suspend_sys_sync_comp);
-	} else {
-		mod_timer(&suspend_sys_sync_timer, jiffies +
-				SUSPEND_SYS_SYNC_TIMEOUT);
-	}
-}
-
-int suspend_sys_sync_wait(void)
-{
-	suspend_sys_sync_abort = false;
-
-	if (suspend_sys_sync_count != 0) {
-		mod_timer(&suspend_sys_sync_timer, jiffies +
-				SUSPEND_SYS_SYNC_TIMEOUT);
-		is_suspend_sys_sync_waiting = true;
-		wait_for_completion(&suspend_sys_sync_comp);
-		is_suspend_sys_sync_waiting = false;
-	}
-	if (suspend_sys_sync_abort) {
-		pr_info("suspend aborted....while waiting for sys_sync\n");
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static void suspend_backoff(void)
 {
 	pr_info("suspend: too many immediate wakeups, back off\n");
@@ -394,7 +319,7 @@ static void suspend(struct work_struct *work)
 	set_debug_lock_timer(0, 0);
 
 	entry_event_num = current_event_num;
-	suspend_sys_sync_queue();
+	sys_sync();
 	getnstimeofday(&ts_entry);
 	ret = pm_suspend(requested_suspend_state);
 	getnstimeofday(&ts_exit);
@@ -700,14 +625,6 @@ static int __init wakelocks_init(void)
 		goto err_platform_driver_register;
 	}
 
-	INIT_COMPLETION(suspend_sys_sync_comp);
-	suspend_sys_sync_work_queue =
-		create_singlethread_workqueue("suspend_sys_sync");
-	if (suspend_sys_sync_work_queue == NULL) {
-		ret = -ENOMEM;
-		goto err_suspend_sys_sync_work_queue;
-	}
-
 	suspend_work_queue = create_singlethread_workqueue("suspend");
 	if (suspend_work_queue == NULL) {
 		ret = -ENOMEM;
@@ -721,7 +638,6 @@ static int __init wakelocks_init(void)
 	return 0;
 
 err_suspend_work_queue:
-err_suspend_sys_sync_work_queue:
 	platform_driver_unregister(&power_driver);
 err_platform_driver_register:
 	platform_device_unregister(&power_device);
@@ -741,7 +657,6 @@ static void  __exit wakelocks_exit(void)
 	remove_proc_entry("wakelocks", NULL);
 #endif
 	destroy_workqueue(suspend_work_queue);
-	destroy_workqueue(suspend_sys_sync_work_queue);
 	platform_driver_unregister(&power_driver);
 	platform_device_unregister(&power_device);
 	wake_lock_destroy(&suspend_backoff_lock);
