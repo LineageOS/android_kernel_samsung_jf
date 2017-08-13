@@ -129,6 +129,8 @@ enum {
 	SHV_E300,
 	SGH_N045,
 	XXX_XXXX,
+	GT_I9515,
+	GT_I9515L,
 };
 
 unsigned int samsung_hardware;
@@ -479,6 +481,10 @@ static int __init do_early_param(char *param, char *val)
 			samsung_hardware = SGH_N045;
 		} else if (strncmp(val, "GT-I9295", 8) == 0) {
 			samsung_hardware = GT_I9295;
+		} else if (strncmp(val, "GT-I9515", 8) == 0) {
+			samsung_hardware = GT_I9515;
+		} else if (strncmp(val, "GT-I9515L", 9) == 0) {
+			samsung_hardware = GT_I9515L;
 		} else {
 			samsung_hardware = XXX_XXXX;
 		}

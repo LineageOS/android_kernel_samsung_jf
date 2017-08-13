@@ -47,7 +47,7 @@ static ssize_t gyro_vendor_show(struct device *dev,
 {
 	struct ssp_data *data = dev_get_drvdata(dev);
 
-	if (k330_rev > 0) {
+	if (k330_rev >= 0) {
 		if (is_jf_eur == true) {
 			if (data->ap_rev == 13)
 				return sprintf(buf, "%s\n", VENDOR);
@@ -70,7 +70,7 @@ static ssize_t gyro_name_show(struct device *dev,
 {
 	struct ssp_data *data = dev_get_drvdata(dev);
 
-	if (k330_rev > 0) {
+	if (k330_rev >= 0) {
 		if (is_jf_eur == true) {
 			if (data->ap_rev == 13)
 				return sprintf(buf, "%s\n", CHIP_ID);
@@ -245,7 +245,7 @@ static ssize_t gyro_get_temp(struct device *dev,
 	short temperature = 0;
 	struct ssp_data *data = dev_get_drvdata(dev);
 
-	if (k330_rev > 0) {
+	if (k330_rev >= 0) {
 		if (is_jf_eur == true) {
 			if (data->ap_rev == 13)
 				temperature = mpu6500_gyro_get_temp(data);
@@ -636,7 +636,7 @@ static ssize_t gyro_selftest_show(struct device *dev,
 {
 	struct ssp_data *data = dev_get_drvdata(dev);
 
-	if (k330_rev > 0) {
+	if (k330_rev >= 0) {
 		if (is_jf_eur == true) {
 			if (data->ap_rev == 13)
 				return mpu6500_gyro_selftest(buf, data);
@@ -755,6 +755,9 @@ void initialize_gyro_factorytest(struct ssp_data *data)
 		k330_rev = 11;
 	else if (samsung_hardware == GT_I9295)
 		k330_rev = 12;
+	else if (samsung_hardware == GT_I9515
+		 	 || samsung_hardware == GT_I9515L)
+		k330_rev = 0;
 
 	sensors_register(data->gyro_device, data, gyro_attrs, "gyro_sensor");
 }
