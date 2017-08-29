@@ -326,14 +326,13 @@ static void cpuset_update_task_spread_flag(struct cpuset *cs,
 					struct task_struct *tsk)
 {
 	if (is_spread_page(cs))
-		task_set_spread_page(tsk);
+		tsk->flags |= PF_SPREAD_PAGE;
 	else
-		task_clear_spread_page(tsk);
-
+		tsk->flags &= ~PF_SPREAD_PAGE;
 	if (is_spread_slab(cs))
-		task_set_spread_slab(tsk);
+		tsk->flags |= PF_SPREAD_SLAB;
 	else
-		task_clear_spread_slab(tsk);
+		tsk->flags &= ~PF_SPREAD_SLAB;
 }
 
 /*
