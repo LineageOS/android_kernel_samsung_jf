@@ -105,7 +105,7 @@ struct iv_lmk_private {
 enum flags { DM_CRYPT_SUSPENDED, DM_CRYPT_KEY_VALID };
 
 /*
- * The fields in here must be read only after initialization,
+ * The fields in here must be read only after initialization.
  */
 struct crypt_config {
 	struct dm_dev *dev;
@@ -753,10 +753,11 @@ static int crypt_convert(struct crypt_config *cc,
 
 		switch (r) {
 		/* async */
-		case -EINPROGRESS:
 		case -EBUSY:
 			wait_for_completion(&ctx->restart);
 			INIT_COMPLETION(ctx->restart);
+			/* fall through*/
+		case -EINPROGRESS:
 			ctx->req = NULL;
 			ctx->cc_sector++;
 			continue;
