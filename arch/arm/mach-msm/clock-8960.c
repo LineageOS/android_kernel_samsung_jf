@@ -6860,6 +6860,9 @@ static void __init msm8960_clock_pre_init(void)
 		ce3_src_clk.c.fmax = fmax_ce3_8064v2;
 		sdc1_clk.c.fmax = fmax_sdc1_8064v2;
 	}
+	if (machine_is_apq8064_mako()) {
+		vcodec_clk.c.fmax = fmax_vcodec_8064v2;
+	}
 	if (soc_class_is_apq8064()) {
 		ijpeg_clk.c.fmax = fmax_ijpeg_8064;
 		mdp_clk.c.fmax = fmax_mdp_8064;
