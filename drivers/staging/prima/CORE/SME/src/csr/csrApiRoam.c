@@ -98,6 +98,7 @@
 #define CSR_DONT_SEND_DISASSOC_OVER_THE_AIR 1
 #define RSSI_HACK_BMPS (-40)
 #define MAX_CB_VALUE_IN_INI (2)
+#define HOST_LOG_MAX_SSID_SIZE 32
 
 /*-------------------------------------------------------------------------- 
   Static Type declarations
@@ -8400,10 +8401,11 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                                 if(pNewBss)
                                 {
                                     palCopyMemory(pMac->hHdd, pIbssLog->bssid, pNewBss->bssId, 6);
-                                    if(pNewBss->ssId.length)
+                                    if(pNewBss->ssId.length > HOST_LOG_MAX_SSID_SIZE)
                                     {
-                                        palCopyMemory(pMac->hHdd, pIbssLog->ssid, pNewBss->ssId.ssId, pNewBss->ssId.length);
+                                        pNewBss->ssId.length = HOST_LOG_MAX_SSID_SIZE;
                                     }
+                                    palCopyMemory(pMac->hHdd, pIbssLog->ssid, pNewBss->ssId.ssId, pNewBss->ssId.length);
                                     pIbssLog->operatingChannel = pNewBss->channelNumber;
                                 }
                                 if(HAL_STATUS_SUCCESS(ccmCfgGetInt(pMac, WNI_CFG_BEACON_INTERVAL, &bi)))
