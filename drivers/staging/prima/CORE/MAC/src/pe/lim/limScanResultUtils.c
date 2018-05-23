@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -140,6 +140,15 @@ limCollectBssDescription(tpAniSirGlobal pMac,
     tANI_U8             rxChannel;
 
     pHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
+
+    ieLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
+    if (ieLen <= (SIR_MAC_B_PR_SSID_OFFSET + 2))
+    {
+        limLog(pMac, LOGP,
+               FL("RX packet has invalid length %d"), ieLen);
+        return;
+    }
+
     ieLen    = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo) - SIR_MAC_B_PR_SSID_OFFSET;
     rxChannel = WDA_GET_RX_CH(pRxPacketInfo);
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
@@ -477,11 +486,13 @@ limCheckAndAddBssDescription(tpAniSirGlobal pMac,
     //If it is not scanning, only save unique results
     if (pMac->lim.gLimReturnUniqueResults || (!fScanning))
     {
-        status = limLookupNaddHashEntry(pMac, pBssDescr, LIM_HASH_UPDATE, dontUpdateAll);
+        status = limLookupNaddHashEntry(pMac, pBssDescr, LIM_HASH_UPDATE, 
+                                        dontUpdateAll, ieLen - 2);
     }
     else
     {
-        status = limLookupNaddHashEntry(pMac, pBssDescr, LIM_HASH_ADD, dontUpdateAll);
+        status = limLookupNaddHashEntry(pMac, pBssDescr, LIM_HASH_ADD, 
+                                        dontUpdateAll, ieLen - 2);
     }
 
     if(fScanning)
@@ -635,10 +646,10 @@ limInitHashTable(tpAniSirGlobal pMac)
 eHalStatus
 limLookupNaddHashEntry(tpAniSirGlobal pMac,
                        tLimScanResultNode *pBssDescr, tANI_U8 action,
-                       tANI_U8 dontUpdateAll)
+                       tANI_U8 dontUpdateAll, tANI_U32 ie_len)
 {
-    tANI_U8                  index, ssidLen = 0;
-    tANI_U8                found = false;
+    tANI_U8 index, ssidLen = 0;
+    tANI_U8 found = false;
     tLimScanResultNode *ptemp, *pprev;
     tSirMacCapabilityInfo *pSirCap, *pSirCapTemp;
     int idx, len;
@@ -662,6 +673,8 @@ limLookupNaddHashEntry(tpAniSirGlobal pMac,
                       sizeof(tSirMacAddr))) &&   //matching BSSID
             (pBssDescr->bssDescription.channelId ==
                                       ptemp->bssDescription.channelId) &&
+            (((tANI_U8 *) &pBssDescr->bssDescription.ieFields + 1) ==
+                ((tANI_U8 *) &ptemp->bssDescription.ieFields + 1)) &&
             palEqualMemory( pMac->hHdd,((tANI_U8 *) &pBssDescr->bssDescription.ieFields + 1),
                            ((tANI_U8 *) &ptemp->bssDescription.ieFields + 1),
                            (tANI_U8) (ssidLen + 1)) &&
