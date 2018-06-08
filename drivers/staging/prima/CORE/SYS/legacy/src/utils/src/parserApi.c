@@ -2431,7 +2431,7 @@ sirConvertAssocRespFrame2Struct(tpAniSirGlobal pMac,
     if (ar.num_WMMTSPEC) {
         pAssocRsp->num_tspecs = ar.num_WMMTSPEC;
         for (cnt=0; cnt < ar.num_WMMTSPEC; cnt++) {
-            palCopyMemory(pMac, &pAssocRsp->TSPECInfo[cnt], &ar.WMMTSPEC[cnt], (sizeof(tDot11fIEWMMTSPEC)*ar.num_WMMTSPEC));
+            palCopyMemory(pMac, &pAssocRsp->TSPECInfo[cnt], &ar.WMMTSPEC[cnt], sizeof(tDot11fIEWMMTSPEC));
         }
         pAssocRsp->tspecPresent = TRUE;
     }
