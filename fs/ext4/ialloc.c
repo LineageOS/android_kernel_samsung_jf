@@ -144,8 +144,7 @@ ext4_read_inode_bitmap(struct super_block *sb, ext4_group_t block_group)
 			unlock_buffer(bh);
 			ext4_error(sb, "Inode bitmap for bg 0 marked "
 				   "uninitialized");
-			err = -EFSCORRUPTED;
-			goto out;
+			return bh;
 		}
 		ext4_init_inode_bitmap(sb, bh, block_group, desc);
 		set_bitmap_uptodate(bh);

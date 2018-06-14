@@ -2817,6 +2817,9 @@ static int ext4_run_lazyinit_thread(void)
 	return 0;
 }
 
+static inline bool sb_rdonly(const struct super_block *sb) {
+	return sb->s_flags & MS_RDONLY;
+}
 /*
  * Check whether it make sense to run itable init. thread or not.
  * If there is at least one uninitialized inode table, return

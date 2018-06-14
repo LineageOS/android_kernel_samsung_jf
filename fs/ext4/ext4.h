@@ -2037,6 +2037,12 @@ extern void print_bh(struct super_block *sb,
 extern void print_block_data(struct super_block *sb, sector_t blocknr,
 			unsigned char *data_to_dump, int start, int len);
 
+static inline int ext4_has_group_desc_csum(struct super_block *sb)
+{
+ return EXT4_HAS_RO_COMPAT_FEATURE(sb,
+ EXT4_FEATURE_RO_COMPAT_GDT_CSUM |
+ EXT4_FEATURE_RO_COMPAT_METADATA_CSUM);
+}
 
 static inline ext4_fsblk_t ext4_blocks_count(struct ext4_super_block *es)
 {
