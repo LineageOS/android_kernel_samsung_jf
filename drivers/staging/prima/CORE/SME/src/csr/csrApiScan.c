@@ -2306,6 +2306,37 @@ eHalStatus csrScanFlushSelectiveResult(tpAniSirGlobal pMac, v_BOOL_t flushP2P)
     return (status);
 }
 
+eHalStatus csrScanFlushSelectiveSsid(tpAniSirGlobal pMac, tANI_U8 *ssId,
+                                     tANI_U8 ssIdLen)
+{
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tListElem *pEntry,*pFreeElem;
+    tCsrScanResult *pBssDesc;
+    tDblLinkList *pList = &pMac->scan.scanResultList;
+
+    csrLLLock(pList);
+
+    pEntry = csrLLPeekHead( pList, LL_ACCESS_NOLOCK );
+    while( pEntry != NULL)
+    {
+        pBssDesc = GET_BASE_ADDR( pEntry, tCsrScanResult, Link );
+        if(vos_mem_compare(pBssDesc->Result.ssId.ssId,
+                            ssId, ssIdLen) )
+        {
+            pFreeElem = pEntry;
+            pEntry = csrLLNext(pList, pEntry, LL_ACCESS_NOLOCK);
+            csrLLRemoveEntry(pList, pFreeElem, LL_ACCESS_NOLOCK);
+            csrFreeScanResultEntry( pMac, pBssDesc );
+            continue;
+        }
+        pEntry = csrLLNext(pList, pEntry, LL_ACCESS_NOLOCK);
+    }
+
+    csrLLUnlock(pList);
+
+    return (status);
+}
+
 /**
  * csrCheck11dChannel
  *
