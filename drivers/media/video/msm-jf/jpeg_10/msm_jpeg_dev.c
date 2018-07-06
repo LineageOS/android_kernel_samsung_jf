@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -33,7 +33,9 @@
 #define MSM_JPEG_NAME "jpeg"
 #define MSM_JPEGE1_NAME "jpege1"
 #define MSM_JPEGD_NAME "jpegd"
+#define DEV_NAME_LEN 10
 
+static char devname[DEV_NAME_LEN];
 
 static int msm_jpeg_open(struct inode *inode, struct file *filp)
 {
@@ -146,7 +148,6 @@ static int msm_jpeg_init_dev(struct platform_device *pdev)
 	int rc = -1;
 	struct device *dev;
 	struct msm_jpeg_device *msm_jpeg_device_p;
-	char devname[10];
 
 	msm_jpeg_device_p = kzalloc(sizeof(struct msm_jpeg_device), GFP_ATOMIC);
 	if (!msm_jpeg_device_p) {
@@ -284,6 +285,7 @@ static struct platform_driver msm_jpeg_driver = {
 static int __init msm_jpeg_driver_init(void)
 {
 	int rc;
+
 	rc = platform_driver_register(&msm_jpeg_driver);
 	return rc;
 }
