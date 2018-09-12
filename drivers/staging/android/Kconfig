@@ -126,6 +126,13 @@ config SEC_OOM_KILLER
 	  Hence, it makes more sense that we select the oom victim
 	  as android does when LMK is invoked.
 
+config ANDROID_FSTAB_FAKE
+	bool "Enable android fstab driver for fake DT fstab"
+	depends on PROC_FS
+	---help---
+	  This is intended to allow early mounting partitions
+	  on devices without DT, or where DT can't be modified.
+
 source "drivers/staging/android/switch/Kconfig"
 
 config RUNTIME_COMPCACHE
