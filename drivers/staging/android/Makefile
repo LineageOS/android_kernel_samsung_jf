@@ -11,5 +11,6 @@ obj-$(CONFIG_ANDROID_LOW_MEMORY_KILLER)	+= lowmemorykiller.o
 obj-$(CONFIG_ANDROID_SWITCH)		+= switch/
 obj-$(CONFIG_PERSISTENT_TRACER)		+= trace_persistent.o
 obj-$(CONFIG_RUNTIME_COMPCACHE)		+= rtcc.o
+obj-$(CONFIG_ANDROID_FSTAB_FAKE)	+= dt_fstab_fake.o
 
 CFLAGS_REMOVE_trace_persistent.o = -pg
