@@ -1729,6 +1729,7 @@ CONFIG_SMUX_CTL=y
 # CONFIG_TRACE_SINK is not set
 # CONFIG_DEVMEM is not set
 # CONFIG_DEVKMEM is not set
+CONFIG_FRANDOM=y
 
 #
 # Serial drivers
