@@ -213,7 +213,7 @@ enum {
 	SITAR_TX_MAX,
 };
 
-extern void *sitar_mbhc_cal_btn_det_mp(const struct sitar_mbhc_btn_detect_cfg
+extern void *sitar_mbhc_cal_btn_det_mp(struct sitar_mbhc_btn_detect_cfg
 				       *btn_det,
 				       const enum sitar_mbhc_btn_det_mem mem);
 

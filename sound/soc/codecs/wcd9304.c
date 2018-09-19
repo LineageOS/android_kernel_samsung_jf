@@ -4477,7 +4477,7 @@ void sitar_mbhc_cal(struct snd_soc_codec *codec)
 	sitar_turn_onoff_rel_detection(codec, true);
 }
 
-void *sitar_mbhc_cal_btn_det_mp(const struct sitar_mbhc_btn_detect_cfg* btn_det,
+void *sitar_mbhc_cal_btn_det_mp(struct sitar_mbhc_btn_detect_cfg* btn_det,
 				const enum sitar_mbhc_btn_det_mem mem)
 {
 	void *ret = &btn_det->_v_btn_low;
