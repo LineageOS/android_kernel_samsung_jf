@@ -6390,7 +6390,7 @@ void tabla_mbhc_cal(struct snd_soc_codec *codec)
 	tabla_turn_onoff_rel_detection(codec, true);
 }
 
-void *tabla_mbhc_cal_btn_det_mp(const struct tabla_mbhc_btn_detect_cfg* btn_det,
+void *tabla_mbhc_cal_btn_det_mp(struct tabla_mbhc_btn_detect_cfg* btn_det,
 				const enum tabla_mbhc_btn_det_mem mem)
 {
 	void *ret = &btn_det->_v_btn_low;
@@ -6697,7 +6697,7 @@ static irqreturn_t tabla_dce_handler(int irq, void *data)
 	u16 *btn_high;
 	int btn = -1, meas = 0;
 	struct tabla_priv *priv = data;
-	const struct tabla_mbhc_btn_detect_cfg *d =
+	struct tabla_mbhc_btn_detect_cfg *d =
 	    TABLA_MBHC_CAL_BTN_DET_PTR(priv->mbhc_cfg.calibration);
 	short btnmeas[d->n_btn_meas + 1];
 	struct snd_soc_codec *codec = priv->codec;
