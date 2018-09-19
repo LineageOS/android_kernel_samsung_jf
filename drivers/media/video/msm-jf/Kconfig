@@ -108,16 +108,16 @@ config MT9P012
 choice
 	prompt "AF module"
 	depends on MT9P012 && !ARCH_MSM8X60 && !MSM_CAMERA_V4L2
-	default MSM_CAMERA_AF_FOXCONN
+	default MSM_CAMERA_AF_FOXCONN_JF
 
-config MSM_CAMERA_AF_FOXCONN
+config MSM_CAMERA_AF_FOXCONN_JF
 	bool "FOXCONN Module"
-	help
+	---help---
 	  This driver supports FOXCONN AF module for 5M Bayer sensor
 
-config MSM_CAMERA_AF_BAM
+config MSM_CAMERA_AF_BAM_JF
 	bool "BAM Module"
-	help
+	---help---
 	  This driver supports BAM AF module for 5M Bayer sensor
 
 endchoice
