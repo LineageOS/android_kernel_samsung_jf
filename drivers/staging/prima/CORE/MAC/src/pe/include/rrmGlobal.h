@@ -38,6 +38,7 @@
   ========================================================================*/
 
 #define SIR_BCN_REPORT_MAX_BSS_DESC                4
+#define SIR_ESE_MAX_MEAS_IE_REQS                   8
 
 typedef enum eRrmRetStatus
 {
