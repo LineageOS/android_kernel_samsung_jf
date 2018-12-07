@@ -129,7 +129,6 @@ struct fs_struct *copy_fs_struct(struct fs_struct *old)
 }
 EXPORT_SYMBOL_GPL(copy_fs_struct);
 
-EXPORT_SYMBOL_GPL(copy_fs_struct);
 int unshare_fs_struct(void)
 {
 	struct fs_struct *fs = current->fs;
