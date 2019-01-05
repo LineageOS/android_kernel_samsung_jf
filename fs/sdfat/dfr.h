@@ -258,4 +258,3 @@ void defrag_spo_test(struct super_block *sb, int flag, const char *caller);
 #endif	/* CONFIG_SDFAT_DFR */
 
 #endif	/* _SDFAT_DEFRAG_H */
-

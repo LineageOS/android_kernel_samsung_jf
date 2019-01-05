@@ -1368,5 +1368,4 @@ defrag_spo_test(
 }
 #endif	/* CONFIG_SDFAT_DFR_DEBUG */
 
-
 #endif /* CONFIG_SDFAT_DFR */

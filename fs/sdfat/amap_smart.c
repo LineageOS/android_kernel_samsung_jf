@@ -1311,4 +1311,3 @@ u32 amap_get_au_stat(struct super_block *sb, s32 mode)
 
 	return 0;
 }
-
