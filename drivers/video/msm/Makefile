@@ -3,7 +3,6 @@ obj-y += mdss/
 else
 obj-y := msm_fb.o
 obj-$(CONFIG_USE_VFB) += msm_vfb.o
-obj-$(CONFIG_SEC_DEBUG_MDP) += sec_debug_mdp.o
 
 obj-$(CONFIG_FB_MSM_LOGO) += logo.o
 obj-$(CONFIG_FB_BACKLIGHT) += msm_fb_bl.o
@@ -13,8 +12,6 @@ ifeq ($(CONFIG_FB_MSM_MDP_HW),y)
 obj-y += mdp.o
 
 obj-$(CONFIG_MDP_DEBUG_FS) += mdp_debugfs.o
-
-obj-$(CONFIG_DEBUG_FS) += xlog.o
 
 obj-$(CONFIG_MDNIE_LITE_TUNING) += mdnie_lite_tuning.o
 

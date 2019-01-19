@@ -47,9 +47,6 @@
 #include <linux/sw_sync.h>
 #include <linux/file.h>
 
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 #define MSM_FB_C
 #include "msm_fb.h"
 #include "mddihosti.h"
@@ -4069,17 +4066,13 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		ret = msmfb_overlay_get(info, argp);
 		break;
 	case MSMFB_OVERLAY_SET:
-		sec_debug_mdp_set_value(SEC_DEBUG_OVERLAY_SET,SEC_DEBUG_IN);
 		ret = msmfb_overlay_set(info, argp);
-		sec_debug_mdp_set_value(SEC_DEBUG_OVERLAY_SET,SEC_DEBUG_OUT);
 		break;
 	case MSMFB_OVERLAY_UNSET:
 		ret = msmfb_overlay_unset(info, argp);
 		break;
 	case MSMFB_OVERLAY_PLAY:
-		sec_debug_mdp_set_value(SEC_DEBUG_OVERLAY_PLAY,SEC_DEBUG_IN);
 		ret = msmfb_overlay_play(info, argp);
-		sec_debug_mdp_set_value(SEC_DEBUG_OVERLAY_PLAY,SEC_DEBUG_OUT);
 		break;
 	case MSMFB_OVERLAY_PLAY_ENABLE:
 		ret = msmfb_overlay_play_enable(info, argp);
@@ -4125,15 +4118,12 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 #endif
 	case MSMFB_VSYNC_CTRL:
 	case MSMFB_OVERLAY_VSYNC_CTRL:
-		sec_debug_mdp_set_value(SEC_DEBUG_OVERLAY_VSYNC_CTRL, SEC_DEBUG_IN);
 		down(&msm_fb_ioctl_ppp_sem);
-		sec_debug_mdp_set_value(SEC_DEBUG_OVERLAY_VSYNC_CTRL, SEC_DEBUG_LOCKED);
 		if (mdp_rev >= MDP_REV_40)
 			ret = msmfb_overlay_vsync_ctrl(info, argp);
 		else
 			ret = msmfb_vsync_ctrl(info, argp);
 		up(&msm_fb_ioctl_ppp_sem);
-		sec_debug_mdp_set_value(SEC_DEBUG_OVERLAY_VSYNC_CTRL, SEC_DEBUG_OUT);
 		break;
 	case MSMFB_BLIT:
 		down(&msm_fb_ioctl_ppp_sem);
@@ -4355,8 +4345,6 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			ret = copy_to_user(argp, &mdp_pp, sizeof(mdp_pp));
 		break;
 	case MSMFB_BUFFER_SYNC:
-		sec_debug_mdp_set_value(SEC_DEBUG_BUFFER_SYNC, SEC_DEBUG_IN);
-		xlog(__func__, 0, 0, 0, 0, 0);
 		ret = copy_from_user(&buf_sync, argp, sizeof(buf_sync));
 		if (ret)
 			return ret;
@@ -4365,16 +4353,10 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 
 		if (!ret)
 			ret = copy_to_user(argp, &buf_sync, sizeof(buf_sync));
-		xlog(__func__, 1, 0, 0, 0, 0);
-		sec_debug_mdp_set_value(SEC_DEBUG_BUFFER_SYNC, SEC_DEBUG_OUT);
 		break;
 
 	case MSMFB_DISPLAY_COMMIT:
-		sec_debug_mdp_set_value(SEC_DEBUG_DISPLAY_COMMIT, SEC_DEBUG_IN);
-		xlog(__func__, 0, 0, 0, 0, 0);
 		ret = msmfb_display_commit(info, argp);
-		xlog(__func__, 1, 0, 0, 0, 0);
-		sec_debug_mdp_set_value(SEC_DEBUG_DISPLAY_COMMIT, SEC_DEBUG_OUT);
 		break;
 
 	case MSMFB_METADATA_GET:
@@ -4547,48 +4529,10 @@ struct platform_device *msm_fb_add_device(struct platform_device *pdev)
 		fbi_list_index--;
 		return NULL;
 	}
-#ifdef CONFIG_SEC_DEBUG
-	if (fbi_list_index == 1) {
-		sec_getlog_supply_fbinfo((void *)(fbi->fix.smem_start),
-				ALIGN(fbi->var.xres, 32),
-				fbi->var.yres,
-				fbi->var.bits_per_pixel,
-				2);
-	}
-#endif
 	return this_dev;
 }
 EXPORT_SYMBOL(msm_fb_add_device);
 
-#ifdef CONFIG_SEC_DEBUG_SUBSYS
-void get_fbinfo(int fb_num, unsigned int *fb_paddr, unsigned int *xres,
-		unsigned int *yres, unsigned int *bpp,
-		unsigned char *roff, unsigned char *rlen,
-		unsigned char *goff, unsigned char *glen,
-		unsigned char *boff, unsigned char *blen,
-		unsigned char *aoff, unsigned char *alen)
-{
-	struct fb_info *info;
-	if (fb_num >= MAX_FBI_LIST)
-		return;
-	info = fbi_list[fb_num];
-	if (!info)
-		return;
-	*fb_paddr = (unsigned int)info->fix.smem_start;
-	*xres = ALIGN(info->var.xres, 32);
-	*yres = info->var.yres;
-	*bpp = info->var.bits_per_pixel;
-	*roff = info->var.red.offset;
-	*rlen = info->var.red.length;
-	*goff = info->var.green.offset;
-	*glen = info->var.green.length;
-	*boff = info->var.blue.offset;
-	*blen = info->var.blue.length;
-	*aoff = info->var.transp.offset;
-	*alen = info->var.transp.length;
-	return;
-}
-#endif
 int get_fb_phys_info(unsigned long *start, unsigned long *len, int fb_num,
 	int subsys_id)
 {

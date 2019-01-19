@@ -46,7 +46,6 @@
 
 #include "msm_fb_panel.h"
 #include "mdp.h"
-#include "sec_debug_mdp.h"
 
 #define MSM_FB_DEFAULT_PAGE_SIZE 2
 #define MFD_KEY  0x11161126
