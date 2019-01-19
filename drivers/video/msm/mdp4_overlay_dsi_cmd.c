@@ -299,7 +299,6 @@ int mdp4_dsi_cmd_pipe_commit(int cndx, int wait, u32 *release_busy)
 	vctrl->update_ndx++;
 	vctrl->update_ndx &= 0x01;
 	vp->update_cnt = 0;     /* reset */
-	xlog(__func__, wait, vp->update_cnt, 0, 0, 0);
 	if (vctrl->blt_free) {
 		vctrl->blt_free--;
 		if (vctrl->blt_free == 0)
@@ -414,7 +413,6 @@ int mdp4_dsi_cmd_pipe_commit(int cndx, int wait, u32 *release_busy)
 			mdp4_dsi_cmd_wait4dmap(0);
 	}
 	
-	xlog(__func__, 0x9999, 0, 0, 0, 0);
 	return cnt;
 }
 
@@ -692,7 +690,6 @@ ssize_t mdp4_dsi_cmd_show_event(struct device *dev,
 	cndx = 0;
 	vctrl = &vsync_ctrl_db[0];
 
-	sec_debug_mdp_set_value(SEC_DEBUG_VSYNC_SYSFS_EVENT, SEC_DEBUG_IN);
 	if (atomic_read(&vctrl->suspend) > 0)
 		return 0;
 
@@ -715,7 +712,6 @@ ssize_t mdp4_dsi_cmd_show_event(struct device *dev,
 
 	ret = snprintf(buf, PAGE_SIZE, "VSYNC=%llu", vsync_tick);
 	buf[strlen(buf) + 1] = '\0';
-	sec_debug_mdp_set_value(SEC_DEBUG_VSYNC_SYSFS_EVENT, SEC_DEBUG_OUT);
 	return ret;
 }
 

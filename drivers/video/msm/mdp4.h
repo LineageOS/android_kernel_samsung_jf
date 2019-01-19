@@ -1008,5 +1008,4 @@ static inline void mdp4_unmap_sec_resource(struct msm_fb_data_type *mfd);
 	return 0;
 }
 #endif
-void xlog(const char *name, u32 data0, u32 data1, u32 data2, u32 data3, u32 data4);
 #endif /* MDP_H */

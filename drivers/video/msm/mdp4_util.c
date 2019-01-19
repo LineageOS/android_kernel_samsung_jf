@@ -767,13 +767,11 @@ irqreturn_t mdp4_isr(int irq, void *ptr)
 #endif	/* OVERLAY */
 
 	if (isr & INTR_PRIMARY_VSYNC) {
-		sec_debug_mdp_set_value(SEC_DEBUG_VSYNC_IRQ, SEC_DEBUG_IN);
 		mdp4_stat.intr_vsync_p++;
 		if (panel & MDP4_PANEL_LCDC)
 			mdp4_primary_vsync_lcdc();
 		else if (panel & MDP4_PANEL_DSI_VIDEO)
 			mdp4_primary_vsync_dsi_video();
-		sec_debug_mdp_set_value(SEC_DEBUG_VSYNC_IRQ, SEC_DEBUG_OUT);
 	}
 #ifdef CONFIG_FB_MSM_DTV
 	if (isr & INTR_EXTERNAL_VSYNC) {
