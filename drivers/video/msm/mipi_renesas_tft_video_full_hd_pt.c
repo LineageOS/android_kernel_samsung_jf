@@ -125,12 +125,11 @@ static char renesas_backlight_control[] = {
 	0x2C,
 };
 
-#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
 static char renesas_teon_control[] = {
 	0x35,
 	0x01,
 };
-
+#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
 static char renesas_teoff_control[] = {
 	0x35,
 	0x00,
@@ -197,10 +196,8 @@ static struct dsi_cmd_desc renesas_ready_to_on_cmds[] = {
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(renesas_backlight_control), renesas_backlight_control},
 
-#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(renesas_teon_control), renesas_teon_control},
-#endif
 
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 120,
 		sizeof(renesas_sleep_out), renesas_sleep_out},
