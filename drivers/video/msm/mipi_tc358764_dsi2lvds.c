@@ -65,10 +65,14 @@
 
 #define DRV_NAME "mipi_tc358764"
 
+#include <linux/lcd.h>
 #include <linux/i2c.h>
 #include <linux/delay.h>
 #include <linux/pwm.h>
 #include <linux/gpio.h>
+
+#include <linux/interrupt.h>
+#include <linux/workqueue.h>
 #include "msm_fb.h"
 #include "mdp4.h"
 #include "mipi_dsi.h"
@@ -188,9 +192,8 @@
 #define DEBUG01		0x05A4	/* LVDS Data */
 
 /* PWM */
-static u32 d2l_pwm_freq_hz = (3.921*1000);
-
-#define PWM_FREQ_HZ	(d2l_pwm_freq_hz)
+#define PWM_FREQ_HZ	(66*1000)	/* 66 KHZ */
+#define PWM_LEVEL 15
 #define PWM_PERIOD_USEC (USEC_PER_SEC / PWM_FREQ_HZ)
 #define PWM_DUTY_LEVEL (PWM_PERIOD_USEC / PWM_LEVEL)
 
@@ -214,23 +217,17 @@ static struct msm_panel_common_pdata *d2l_common_pdata;
 struct msm_fb_data_type *d2l_mfd;
 static struct dsi_buf d2l_tx_buf;
 static struct dsi_buf d2l_rx_buf;
-static int led_pwm;
 static struct pwm_device *bl_pwm;
-static struct pwm_device *tn_pwm;
+static int initial_powerseq;
+
 static int bl_level;
-static u32 d2l_gpio_out_mask;
-static u32 d2l_gpio_out_val;
-static u32 d2l_3d_gpio_enable;
-static u32 d2l_3d_gpio_mode;
-static int d2l_enable_3d;
 static struct i2c_client *d2l_i2c_client;
 static struct i2c_driver d2l_i2c_slave_driver;
 
 static int mipi_d2l_init(void);
-static int mipi_d2l_enable_3d(struct msm_fb_data_type *mfd,
-			      bool enable, bool mode);
 static u32 d2l_i2c_read_reg(struct i2c_client *client, u16 reg);
 static u32 d2l_i2c_write_reg(struct i2c_client *client, u16 reg, u32 val);
+static struct dsi2lvds_driver_data ddd;
 
 /**
  * Read a bridge register
@@ -441,7 +438,7 @@ static int mipi_d2l_dsi_init_sequence(struct msm_fb_data_type *mfd)
 	mipi_d2l_write_reg(mfd, HTIM2, htime2);
 	mipi_d2l_write_reg(mfd, VTIM2, vtime2);
 	mipi_d2l_write_reg(mfd, VFUEN, 0x00000001);
-	mipi_d2l_write_reg(mfd, LVCFG, lvcfg); /* Enables LVDS tx */
+	mipi_d2l_write_reg(mfd, LVCFG, 0x00000001); /* Enables LVDS tx */
 
 	return 0;
 }
@@ -458,7 +455,10 @@ static int mipi_d2l_set_backlight_level(struct pwm_device *pwm, int level)
 {
 	int ret = 0;
 
-	pr_debug("%s: level=%d.\n", __func__, level);
+	if (d2l_mfd->resume_state == MIPI_SUSPEND_STATE) {
+		return 0;
+	}
+	pr_info("%s: level=%d.\n", __func__, level);
 
 	if ((pwm == NULL) || (level > PWM_LEVEL) || (level < 0)) {
 		pr_err("%s.pwm=NULL.\n", __func__);
@@ -481,35 +481,8 @@ static int mipi_d2l_set_backlight_level(struct pwm_device *pwm, int level)
 	return 0;
 }
 
-/**
- * Set TN CLK.
- *
- * @param pwm
- * @param level
- *
- * @return int
- */
-static int mipi_d2l_set_tn_clk(struct pwm_device *pwm, u32 usec)
-{
-	int ret = 0;
 
-	pr_debug("%s: usec=%d.\n", __func__, usec);
 
-	ret = pwm_config(pwm, usec/2 , usec);
-	if (ret) {
-		pr_err("%s: pwm_config() failed err=%d.\n", __func__, ret);
-		return ret;
-	}
-
-	ret = pwm_enable(pwm);
-	if (ret) {
-		pr_err("%s: pwm_enable() failed err=%d\n",
-		       __func__, ret);
-		return ret;
-	}
-
-	return 0;
-}
 
 /**
  * LCD ON.
@@ -530,7 +503,9 @@ static int mipi_d2l_lcd_on(struct platform_device *pdev)
 	pr_info("%s.\n", __func__);
 
 	/* wait for valid clock before sending data over DSI or I2C. */
+#if 0
 	msleep(30);
+#endif
 
 	mfd = platform_get_drvdata(pdev);
 	d2l_mfd = mfd;
@@ -552,32 +527,17 @@ static int mipi_d2l_lcd_on(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	mipi_d2l_write_reg(mfd, GPIOC, d2l_gpio_out_mask);
-	/* Set gpio#4=U/D=0, gpio#3=L/R=1 , gpio#2,1=CABC=0, gpio#0=NA. */
-	mipi_d2l_write_reg(mfd, GPIOO, d2l_gpio_out_val);
-
-	d2l_pwm_freq_hz = (3.921*1000);
-
-	if (bl_level == 0)
-		bl_level = PWM_LEVEL * 2 / 3 ; /* Default ON value */
-
-	/* Set backlight via PWM */
-	if (bl_pwm) {
-		ret = mipi_d2l_set_backlight_level(bl_pwm, bl_level);
-		if (ret)
-			pr_err("%s.mipi_d2l_set_backlight_level.ret=%d",
-			       __func__, ret);
-	}
-
 	mipi_d2l_read_status(mfd);
 
-	mipi_d2l_enable_3d(mfd, false, false);
 
 	/* Add I2C driver only after DSI-CLK is running */
 	if (d2l_i2c_client == NULL)
 		i2c_add_driver(&d2l_i2c_slave_driver);
 
 	pr_info("%s.ret=%d.\n", __func__, ret);
+
+	/* Set power on flag */
+	initial_powerseq = 1;
 
 	return ret;
 }
@@ -591,7 +551,7 @@ static int mipi_d2l_lcd_on(struct platform_device *pdev)
  */
 static int mipi_d2l_lcd_off(struct platform_device *pdev)
 {
-	int ret;
+	int ret = 0;
 	struct msm_fb_data_type *mfd;
 
 	pr_info("%s.\n", __func__);
@@ -603,7 +563,7 @@ static int mipi_d2l_lcd_off(struct platform_device *pdev)
 	if (mfd->key != MFD_KEY)
 		return -EINVAL;
 
-	ret = mipi_d2l_set_backlight_level(bl_pwm, 1);
+	ret = mipi_d2l_set_backlight_level(bl_pwm, 0);
 
 	pr_info("%s.ret=%d.\n", __func__, ret);
 
@@ -616,6 +576,7 @@ static void mipi_d2l_set_backlight(struct msm_fb_data_type *mfd)
 
 	pr_debug("%s.lvl=%d.\n", __func__, level);
 
+	/*Will be enabled after PWM code changes*/
 	mipi_d2l_set_backlight_level(bl_pwm, level);
 
 	bl_level = level;
@@ -626,6 +587,29 @@ static struct msm_fb_panel_data d2l_panel_data = {
 	.off = mipi_d2l_lcd_off,
 	.set_backlight = mipi_d2l_set_backlight,
 };
+#if defined(CONFIG_HAS_EARLYSUSPEND)
+static void mipi_d2l_disp_early_suspend(struct early_suspend *h)
+{
+	down(&d2l_mfd->sem);
+	mipi_d2l_set_backlight_level(bl_pwm, 0);
+	d2l_mfd->resume_state = MIPI_SUSPEND_STATE;
+	up(&d2l_mfd->sem);
+	mdelay(20);
+	pr_info("%s-", __func__);
+}
+
+static void mipi_d2l_disp_late_resume(struct early_suspend *h)
+{
+
+	d2l_mfd->resume_state = MIPI_RESUME_STATE;
+
+	mdelay(5);
+
+	if (bl_level)
+		mipi_d2l_set_backlight_level(bl_pwm, bl_level);
+	pr_info("%s-", __func__);
+}
+#endif
 
 static u32 d2l_i2c_read_reg(struct i2c_client *client, u16 reg)
 {
@@ -724,99 +708,23 @@ static struct i2c_driver d2l_i2c_slave_driver = {
 	.id_table = d2l_i2c_id,
 };
 
-static int mipi_d2l_enable_3d(struct msm_fb_data_type *mfd,
-			      bool enable, bool mode)
+
+
+#if defined(CONFIG_LCD_CLASS_DEVICE)
+static ssize_t dsi2lvds_tc358764_lcdtype_show(struct device *dev,
+			struct device_attribute *attr, char *buf)
 {
-	u32 tn_usec = 1000000 / 66; /* 66 HZ */
-
-	pr_debug("%s.enable=%d.mode=%d.\n", __func__, enable, mode);
-
-	gpio_direction_output(d2l_3d_gpio_enable, enable);
-	gpio_direction_output(d2l_3d_gpio_mode, mode);
-
-	mipi_d2l_set_tn_clk(tn_pwm, tn_usec);
-
-	return 0;
+	char temp[30];
+	pr_info("%s\n", __func__);
+	snprintf(temp, strnlen(ddd.dpd->panel_name, 30) + 1,
+						ddd.dpd->panel_name);
+	strncat(buf, temp, 30);
+	return strnlen(buf, 30);
 }
+static struct lcd_ops dsi2lvds_tc358764_disp_props;
 
-static ssize_t mipi_d2l_enable_3d_read(struct device *dev,
-				struct device_attribute *attr,
-				char *buf)
-{
-	return snprintf((char *)buf, sizeof(buf), "%u\n", d2l_enable_3d);
-}
-
-static ssize_t mipi_d2l_enable_3d_write(struct device *dev,
-				struct device_attribute *attr,
-				const char *buf,
-				size_t count)
-{
-	int ret = -1;
-	u32 data = 0;
-
-	if (sscanf((char *)buf, "%u", &data) != 1) {
-		dev_err(dev, "%s. Invalid input.\n", __func__);
-		ret = -EINVAL;
-	} else {
-		d2l_enable_3d = data;
-		if (data == 1) /* LANDSCAPE */
-			mipi_d2l_enable_3d(d2l_mfd, true, true);
-		else if (data == 2) /* PORTRAIT */
-			mipi_d2l_enable_3d(d2l_mfd, true, false);
-		else if (data == 0)
-			mipi_d2l_enable_3d(d2l_mfd, false, false);
-		else if (data == 9)
-			mipi_d2l_read_status_via_i2c(d2l_i2c_client);
-		else
-			pr_err("%s.Invalid value=%d.\n", __func__, data);
-	}
-
-	return count;
-}
-
-static struct device_attribute mipi_d2l_3d_barrier_attributes[] = {
-	__ATTR(enable_3d_barrier, 0666,
-	       mipi_d2l_enable_3d_read,
-	       mipi_d2l_enable_3d_write),
-};
-
-static int mipi_dsi_3d_barrier_sysfs_register(struct device *dev)
-{
-	int ret;
-
-	pr_debug("%s.d2l_3d_gpio_enable=%d.\n", __func__, d2l_3d_gpio_enable);
-	pr_debug("%s.d2l_3d_gpio_mode=%d.\n", __func__, d2l_3d_gpio_mode);
-
-	ret  = device_create_file(dev, mipi_d2l_3d_barrier_attributes);
-	if (ret) {
-		pr_err("%s.failed to create 3D sysfs.\n", __func__);
-		goto err_device_create_file;
-	}
-
-	ret = gpio_request(d2l_3d_gpio_enable, "d2l_3d_gpio_enable");
-	if (ret) {
-		pr_err("%s.failed to get d2l_3d_gpio_enable=%d.\n",
-		       __func__, d2l_3d_gpio_enable);
-		goto err_d2l_3d_gpio_enable;
-	}
-
-	ret = gpio_request(d2l_3d_gpio_mode, "d2l_3d_gpio_mode");
-	if (ret) {
-		pr_err("%s.failed to get d2l_3d_gpio_mode=%d.\n",
-		       __func__, d2l_3d_gpio_mode);
-		goto err_d2l_3d_gpio_mode;
-	}
-
-	return 0;
-
-err_d2l_3d_gpio_mode:
-	gpio_free(d2l_3d_gpio_enable);
-err_d2l_3d_gpio_enable:
-	device_remove_file(dev, mipi_d2l_3d_barrier_attributes);
-err_device_create_file:
-
-	return ret;
-}
+static DEVICE_ATTR(lcd_type, S_IRUGO, dsi2lvds_tc358764_lcdtype_show, NULL);
+#endif
 
 /**
  * Probe for device.
@@ -835,6 +743,9 @@ static int __devinit mipi_d2l_probe(struct platform_device *pdev)
 	int ret = 0;
 	struct msm_panel_info *pinfo = NULL;
 
+#if defined(CONFIG_LCD_CLASS_DEVICE)
+	struct lcd_device *lcd_device;
+#endif
 	pr_debug("%s.id=%d.\n", __func__, pdev->id);
 
 	if (pdev->id == 0) {
@@ -845,50 +756,13 @@ static int __devinit mipi_d2l_probe(struct platform_device *pdev)
 			return 0;
 		}
 
-		led_pwm = d2l_common_pdata->gpio_num[0];
-		d2l_gpio_out_mask = d2l_common_pdata->gpio_num[1] >> 8;
-		d2l_gpio_out_val = d2l_common_pdata->gpio_num[1] & 0xFF;
-		d2l_3d_gpio_enable = d2l_common_pdata->gpio_num[2];
-		d2l_3d_gpio_mode = d2l_common_pdata->gpio_num[3];
 
-		mipi_dsi_buf_alloc(&d2l_tx_buf, DSI_BUF_SIZE);
-		mipi_dsi_buf_alloc(&d2l_rx_buf, DSI_BUF_SIZE);
 
 		return 0;
 	}
 
-	if (d2l_common_pdata == NULL) {
-		pr_err("%s: d2l_common_pdata is NULL.\n", __func__);
-		return -ENODEV;
-	}
 
-	bl_pwm = NULL;
-	if (led_pwm >= 0) {
-		bl_pwm = pwm_request(led_pwm, "lcd-backlight");
-		if (bl_pwm == NULL || IS_ERR(bl_pwm)) {
-			pr_err("%s pwm_request() failed.id=%d.bl_pwm=%d.\n",
-			       __func__, led_pwm, (int) bl_pwm);
-			bl_pwm = NULL;
-			return -EIO;
-		} else {
-			pr_debug("%s.pwm_request() ok.pwm-id=%d.\n",
-			       __func__, led_pwm);
 
-		}
-	} else {
-		pr_err("%s. led_pwm is invalid.\n", __func__);
-	}
-
-	tn_pwm = pwm_request(1, "3D_TN_clk");
-	if (tn_pwm == NULL || IS_ERR(tn_pwm)) {
-		pr_err("%s pwm_request() failed.id=%d.tn_pwm=%d.\n",
-		       __func__, 1, (int) tn_pwm);
-		tn_pwm = NULL;
-		return -EIO;
-	} else {
-		pr_debug("%s.pwm_request() ok.pwm-id=%d.\n", __func__, 1);
-
-	}
 
 	pinfo = pdev->dev.platform_data;
 
@@ -903,8 +777,30 @@ static int __devinit mipi_d2l_probe(struct platform_device *pdev)
 
 	msm_fb_add_device(pdev);
 
-	if (pinfo->is_3d_panel)
-		mipi_dsi_3d_barrier_sysfs_register(&(pdev->dev));
+#if defined(CONFIG_LCD_CLASS_DEVICE)
+	lcd_device = lcd_device_register("panel", &pdev->dev, NULL,
+					&dsi2lvds_tc358764_disp_props);
+
+	if (IS_ERR(lcd_device)) {
+		ret = PTR_ERR(lcd_device);
+		printk(KERN_ERR "lcd : failed to register device\n");
+		return 0;
+	}
+
+	ret = sysfs_create_file(&lcd_device->dev.kobj,
+					&dev_attr_lcd_type.attr);
+	if (ret) {
+		pr_info("sysfs create fail-%s\n",
+				dev_attr_lcd_type.attr.name);
+	}
+#endif
+
+#if defined(CONFIG_HAS_EARLYSUSPEND)
+	ddd.early_suspend.suspend = mipi_d2l_disp_early_suspend;
+	ddd.early_suspend.resume = mipi_d2l_disp_late_resume;
+	ddd.early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN;
+	register_early_suspend(&ddd.early_suspend);
+#endif
 
 	return ret;
 }
@@ -921,10 +817,6 @@ static int __devexit mipi_d2l_remove(struct platform_device *pdev)
 	/* Note: There are no APIs to remove fb device and free DSI buf. */
 	pr_debug("%s.\n", __func__);
 
-	if (bl_pwm) {
-		pwm_free(bl_pwm);
-		bl_pwm = NULL;
-	}
 
 	return 0;
 }
@@ -939,7 +831,8 @@ static int __devexit mipi_d2l_remove(struct platform_device *pdev)
  * @return int
  */
 int mipi_tc358764_dsi2lvds_register(struct msm_panel_info *pinfo,
-					   u32 channel_id, u32 panel_id)
+					   u32 channel_id, u32 panel_id,
+					   struct dsi2lvds_panel_data *dpd)
 {
 	struct platform_device *pdev = NULL;
 	int ret;
@@ -959,6 +852,13 @@ int mipi_tc358764_dsi2lvds_register(struct msm_panel_info *pinfo,
 		return -ENOMEM;
 
 	pdev->dev.platform_data = pinfo;
+
+	ddd.dpd = dpd;
+	if (!ddd.dpd) {
+		printk(KERN_ERR
+		  "%s: get mipi_panel_data failed!\n", __func__);
+		goto err_device_put;
+	}
 
 	ret = platform_device_add(pdev);
 	if (ret) {
@@ -989,6 +889,8 @@ static struct platform_driver d2l_driver = {
 static int mipi_d2l_init(void)
 {
 	pr_debug("%s.\n", __func__);
+	mipi_dsi_buf_alloc(&d2l_tx_buf, DSI_BUF_SIZE);
+	mipi_dsi_buf_alloc(&d2l_rx_buf, DSI_BUF_SIZE);
 
 	d2l_i2c_client = NULL;
 
