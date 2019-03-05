@@ -175,9 +175,9 @@ static void sensor_power_on_vdd(int, int);
 #define MSM_ION_MFC_META_SIZE  0x40000 /* 256 Kbytes */
 #define MSM_CONTIG_MEM_SIZE  0x65000
 #ifdef CONFIG_MSM_IOMMU
-#define MSM_ION_MM_SIZE		0x6600000    /* 56MB(0x3800000) -> 98MB -> 102MB */
+#define MSM_ION_MM_SIZE		0x5C00000 /* Need to be multiple of 64K */
 #define MSM_ION_SF_SIZE		0
-#define MSM_ION_QSECOM_SIZE	0x1700000    /* 7.5MB(0x780000) -> 23MB */
+#define MSM_ION_QSECOM_SIZE	0x780000 /* (7.5MB) */
 #define MSM_ION_HEAP_NUM	8
 #else
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE
@@ -1673,7 +1673,7 @@ out:
 
 static struct android_usb_platform_data android_usb_pdata = {
 	.update_pid_and_serial_num = usb_diag_update_pid_and_serial_num,
-	.cdrom = true,
+	.cdrom = false,
 	.nluns = 0,
 };
 
@@ -4522,7 +4522,7 @@ static struct gpio_keys_button gpio_keys_button[] = {
 		.desc           = "volume_up_key",
 		.active_low     = 1,
 		.type		= EV_KEY,
-		.wakeup		= 0,
+		.wakeup		= 1,
 #ifdef CONFIG_SEC_FACTORY
 		.debounce_interval = 10,
 #else
@@ -4535,7 +4535,7 @@ static struct gpio_keys_button gpio_keys_button[] = {
 		.desc           = "volume_down_key",
 		.active_low     = 1,
 		.type		= EV_KEY,
-		.wakeup		= 0,
+		.wakeup		= 1,
 #ifdef CONFIG_SEC_FACTORY
 		.debounce_interval = 10,
 #else
@@ -4543,7 +4543,7 @@ static struct gpio_keys_button gpio_keys_button[] = {
 #endif
 	},
 	{
-		.code           = KEY_HOMEPAGE,
+		.code           = KEY_HOME,
 		.gpio           = GPIO_KEY_HOME,
 		.desc           = "home_key",
 		.active_low     = 1,
@@ -5245,35 +5245,6 @@ static void __init apq8064ab_update_retention_spm(void)
 	}
 }
 
-#ifdef CONFIG_SERIAL_MSM_HS
-static struct msm_serial_hs_platform_data apq8064_uartdm_gsbi4_pdata = {
-	.config_gpio	= 4,
-	.uart_tx_gpio	= 10,
-	.uart_rx_gpio	= 11,
-	.uart_cts_gpio	= 12,
-	.uart_rfr_gpio	= 13,
-};
-#else
-static struct msm_serial_hs_platform_data apq8064_uartdm_gsbi4_pdata;
-#endif
-
-static void __init apq8064ab_update_retention_spm(void)
-{
-	int i;
-
-	/* Update the SPM sequences for krait retention on all cores */
-	for (i = 0; i < ARRAY_SIZE(msm_spm_data); i++) {
-		int j;
-		struct msm_spm_platform_data *pdata = &msm_spm_data[i];
-		for (j = 0; j < pdata->num_modes; j++) {
-			if (pdata->modes[j].cmd ==
-					spm_retention_cmd_sequence)
-				pdata->modes[j].cmd =
-				spm_retention_with_krait_v3_cmd_sequence;
-		}
-	}
-}
-
 static void __init apq8064_common_init(void)
 {
 	u32 platform_version = socinfo_get_platform_version();
@@ -5346,20 +5317,17 @@ static void __init apq8064_common_init(void)
 
 	platform_add_devices(common_devices, ARRAY_SIZE(common_devices));
 
-	if (!machine_is_apq8064_mtp())
-		platform_device_register(&apq8064_device_ext_ts_sw_vreg);
-
 	if (!(machine_is_mpq8064_cdp() || machine_is_mpq8064_hrd() ||
 			machine_is_mpq8064_dtv())) {
 		platform_add_devices(common_not_mpq_devices,
 			ARRAY_SIZE(common_not_mpq_devices));
+
 		/* Add GSBI4 I2C Device for non-fusion3 platform */
 		if (socinfo_get_platform_subtype() !=
 				PLATFORM_SUBTYPE_SGLTE2) {
 			platform_device_register(&apq8064_device_qup_i2c_gsbi4);
 		}
 	}
-	
 #ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
 		if (system_rev < 10)
 			platform_device_register(&touchkey_i2c_gpio_device);

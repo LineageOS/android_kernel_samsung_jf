@@ -177,9 +177,9 @@ static void sensor_power_on_vdd(int, int);
 #define MSM_ION_MFC_META_SIZE  0x40000 /* 256 Kbytes */
 #define MSM_CONTIG_MEM_SIZE  0x65000
 #ifdef CONFIG_MSM_IOMMU
-#define MSM_ION_MM_SIZE		0x6200000    /* 56MB(0x3800000) -> 98MB */
+#define MSM_ION_MM_SIZE		0x5C00000 /* Need to be multiple of 64K */
 #define MSM_ION_SF_SIZE		0
-#define MSM_ION_QSECOM_SIZE	0x1700000    /* 7.5MB(0x780000) -> 23MB */
+#define MSM_ION_QSECOM_SIZE	0x780000 /* (7.5MB) */
 #define MSM_ION_HEAP_NUM	8
 #else
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE
@@ -4546,7 +4546,7 @@ static struct gpio_keys_button gpio_keys_button[] = {
 		.desc           = "volume_up_key",
 		.active_low     = 1,
 		.type		= EV_KEY,
-		.wakeup		= 0,
+		.wakeup		= 1,
 		.debounce_interval = 5,
 	},
 	{
@@ -4555,11 +4555,11 @@ static struct gpio_keys_button gpio_keys_button[] = {
 		.desc           = "volume_down_key",
 		.active_low     = 1,
 		.type		= EV_KEY,
-		.wakeup		= 0,
+		.wakeup		= 1,
 		.debounce_interval = 5,
 	},
 	{
-		.code           = KEY_HOMEPAGE,
+		.code           = KEY_HOME,
 		.gpio           = GPIO_KEY_HOME,
 		.desc           = "home_key",
 		.active_low     = 1,

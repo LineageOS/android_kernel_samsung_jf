@@ -181,9 +181,9 @@ static void sensor_power_on_vdd(int, int);
 #define MSM_ION_MFC_META_SIZE  0x40000 /* 256 Kbytes */
 #define MSM_CONTIG_MEM_SIZE  0x65000
 #ifdef CONFIG_MSM_IOMMU
-#define MSM_ION_MM_SIZE		0x6200000    /* 56MB(0x3800000) -> 98MB */
+#define MSM_ION_MM_SIZE		0x5C00000 /* Need to be multiple of 64K */
 #define MSM_ION_SF_SIZE		0
-#define MSM_ION_QSECOM_SIZE	0x1700000    /* 7.5MB(0x780000) -> 23MB */
+#define MSM_ION_QSECOM_SIZE	0x780000 /* (7.5MB) */
 #define MSM_ION_HEAP_NUM	8
 #else
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE
@@ -5272,7 +5272,7 @@ static void __init apq8064_common_init(void)
 			machine_is_mpq8064_dtv())) {
 		platform_add_devices(common_not_mpq_devices,
 			ARRAY_SIZE(common_not_mpq_devices));
-	
+
 		/* Add GSBI4 I2C Device for non-fusion3 platform */
 		if (socinfo_get_platform_subtype() !=
 				PLATFORM_SUBTYPE_SGLTE2) {
