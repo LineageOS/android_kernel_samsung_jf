@@ -226,9 +226,9 @@ static struct page *get_arg_page(struct linux_binprm *bprm, unsigned long pos,
 		 *  - the program will have a reasonable amount of stack left
 		 *    to work from.
 		 */
-+		limit = _STK_LIM / 4 * 3;
-+		limit = min(limit, rlimit(RLIMIT_STACK) / 4);
-+		if (size > limit) {
+		limit = _STK_LIM / 4 * 3;
+		limit = min(limit, rlimit(RLIMIT_STACK) / 4);
+		if (size > limit) {
 			put_page(page);
 			return NULL;
 		}
