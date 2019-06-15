@@ -88,6 +88,14 @@
 #define O_NDELAY	O_NONBLOCK
 #endif
 
+#ifndef __O_TMPFILE
+#define __O_TMPFILE	020000000
+#endif
+
+/* a horrid kludge trying to make sure that this will fail on old kernels */
+#define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
+#define O_TMPFILE_MASK (__O_TMPFILE | O_DIRECTORY | O_CREAT)
+
 #define F_DUPFD		0	/* dup */
 #define F_GETFD		1	/* get close_on_exec */
 #define F_SETFD		2	/* set/clear close_on_exec */
