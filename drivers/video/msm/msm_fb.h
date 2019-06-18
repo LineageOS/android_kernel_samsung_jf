@@ -90,7 +90,6 @@ struct msm_fb_data_type {
 
 	struct device *dev;
 	boolean op_enable;
-	struct delayed_work backlight_worker;
 	uint32 fb_imgType;
 	boolean sw_currently_refreshing;
 	boolean sw_refreshing_enable;
@@ -202,6 +201,7 @@ struct msm_fb_data_type {
 	u32 writeback_state;
 	bool writeback_active_cnt;
 	bool writeback_initialized;
+	boolean backlight_ctrl_ongoing;
 	int cont_splash_done;
 	void *cpu_pm_hdl;
 	u32 acq_fen_cnt;
@@ -270,7 +270,9 @@ int msm_fb_check_frame_rate(struct msm_fb_data_type *mfd,
 #ifdef CONFIG_FB_MSM_LOGO
 #define INIT_IMAGE_FILE "/initlogo.rle"
 int load_565rle_image(char *filename, bool bf_supported);
+extern int draw_rgb888_screen(void);
 #endif
+extern int poweroff_charging;
 
 static inline bool mdp_panel_is_power_off(int panel_power_state)
 {
@@ -317,4 +319,5 @@ static inline bool mdp_fb_is_power_on_lp(struct msm_fb_data_type *mfd)
 }
 
 void mdp_restore_rgb(void);
+
 #endif /* MSM_FB_H */

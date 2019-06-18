@@ -459,11 +459,16 @@ static ssize_t csc_write_cfg(struct device *dev,
 	ssize_t ret = strnlen(buf, PAGE_SIZE);
 	int err;
 	int mode;
+	struct msm_fb_data_type *mfd = registered_fb[0]->par;
 
 	err =  kstrtoint(buf, 0, &mode);
 	if (err)
 	       return ret;
 
+	if(mdp_fb_is_power_off(mfd)) {
+		pr_err("Failed CSC Update Since display is off");
+		return ret;
+	}
 	cscctrl.mode = mode;
 	update_csc_registers(cscctrl.mode);
 
@@ -474,30 +479,19 @@ static ssize_t csc_write_cfg(struct device *dev,
 
 static DEVICE_ATTR(csc_cfg, S_IRUGO | S_IWUSR, csc_read_cfg, csc_write_cfg);
 
-static struct attribute *csc_fs_attrs[] = {
-	&dev_attr_csc_cfg.attr,
-	NULL,
-};
-
-static struct attribute_group csc_fs_attr_group = {
-	.attrs = csc_fs_attrs,
-};
-
 int mdp4_reg_csc_fs(struct device *dev)
 {
 	int ret = 0;
 
 	if (!cscctrl.sysfs_created) {
 		cscctrl.dev = dev;
-		ret = sysfs_create_group(&cscctrl.dev->kobj,
-		&csc_fs_attr_group);
-		if (ret) {
+		if (device_create_file(dev, &dev_attr_csc_cfg) < 0) {
 			pr_err("%s: sysfs group creation failed, ret=%d\n",
 			       __func__, ret);
 			return ret;
 		}
 
-		kobject_uevent(&cscctrl.dev->kobj, KOBJ_ADD);
+		kobject_uevent(&dev->kobj, KOBJ_ADD);
 		pr_info("%s: kobject_uevent(KOBJ_ADD)\n", __func__);
 		cscctrl.sysfs_created = 1;
 	}
@@ -645,7 +639,7 @@ irqreturn_t mdp4_isr(int irq, void *ptr)
 	if (isr & INTR_PRIMARY_INTF_UDERRUN) {
 		pr_info("%s: UNDERRUN -- primary\n", __func__);
 		mdp4_stat.intr_underrun_p++;
-		dump_underrun_pipe_info();
+//		dump_underrun_pipe_info();
 		/* When underun occurs mdp clear the histogram registers
 		that are set before in hw_init so restore them back so
 		that histogram works.*/
@@ -1373,7 +1367,6 @@ static uint32 vg_qseed_table2[] = {
 	0x0fb20fee, 0x0f46031a, 0x0f980ff3, 0x0f4b032a,
 	0x0f800ffa, 0x0f4f0337, 0x0f6d0ffe, 0x0f57033e
 };
-
 
 #define MDP4_QSEED_TABLE0_OFF 0x8100
 #define MDP4_QSEED_TABLE1_OFF 0x8200
@@ -2870,42 +2863,19 @@ static int mdp4_argc_process_write_req(uint32_t *offset,
 	struct mdp_ar_gc_lut_data r[MDP_AR_GC_MAX_STAGES];
 	struct mdp_ar_gc_lut_data g[MDP_AR_GC_MAX_STAGES];
 	struct mdp_ar_gc_lut_data b[MDP_AR_GC_MAX_STAGES];
-	uint8_t num_r_stages;
-	uint8_t num_g_stages;
-	uint8_t num_b_stages;
-
-	if (get_user(num_r_stages, &pgc_ptr->num_r_stages)) {
-		pr_err("%s failed: num_r_stages : Invalid arg\n", __func__);
-		return -EFAULT;
-	}
-
-	if (get_user(num_g_stages, &pgc_ptr->num_g_stages)) {
-		pr_err("%s failed: num_g_stages : Invalid arg\n", __func__);
-		return -EFAULT;
-	}
-
-	if (get_user(num_b_stages, &pgc_ptr->num_b_stages)) {
-		pr_err("%s failed: num_b_stages : Invalid arg\n", __func__);
-		return -EFAULT;
-	}
-
-	if ((!num_r_stages || num_r_stages > MDP_AR_GC_MAX_STAGES) ||
-		(!num_g_stages || num_g_stages > MDP_AR_GC_MAX_STAGES) ||
-		(!num_b_stages || num_b_stages > MDP_AR_GC_MAX_STAGES))
-		return -EINVAL;
 
 	ret = copy_from_user(&r[0], pgc_ptr->r_data,
-		num_r_stages * sizeof(struct mdp_ar_gc_lut_data));
+		pgc_ptr->num_r_stages * sizeof(struct mdp_ar_gc_lut_data));
 
 	if (!ret) {
 		ret = copy_from_user(&g[0],
 				pgc_ptr->g_data,
-				num_g_stages
+				pgc_ptr->num_g_stages
 				* sizeof(struct mdp_ar_gc_lut_data));
 		if (!ret)
 			ret = copy_from_user(&b[0],
 					pgc_ptr->b_data,
-					num_b_stages
+					pgc_ptr->num_b_stages
 					* sizeof(struct mdp_ar_gc_lut_data));
 	}
 

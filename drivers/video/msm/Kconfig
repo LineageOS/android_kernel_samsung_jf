@@ -40,16 +40,16 @@ config FB_MSM_MDP_HW
 	bool
 	default n
 
-config MDP_DEBUG_FS
-	depends on DEBUG_FS
-	bool "MDP Debug FS"
-	default n
-
 config USE_VFB
 	bool "MSM Virtual Framebuffer support"
 	default n
 	---help---
 	  Support for MSM Virtual Framebuffer
+
+config MDP_DEBUG_FS
+	depends on DEBUG_FS
+	bool "MDP Debug FS"
+	default n
 
 choice
 	prompt "MDP HW version"
@@ -99,12 +99,12 @@ config FB_MSM_MDP40
 config FB_MSM_MDSS
 	bool "MDSS HW"
 	---help---
-	The Mobile Display Sub System (MDSS) driver supports devices which
-	contain MDSS hardware block.
+	  The Mobile Display Sub System (MDSS) driver supports devices which
+	  contain MDSS hardware block.
 
-	The MDSS driver implements frame buffer interface to provide access to
-	the display hardware and provide a way for users to display graphics
-	on connected display panels.
+	  The MDSS driver implements frame buffer interface to provide access to
+	  the display hardware and provide a way for users to display graphics
+	  on connected display panels.
 
 config FB_MSM_MDP_NONE
 	bool "MDP HW None"
@@ -224,7 +224,7 @@ config FB_MSM_MIPI_DSI_NT35510
 	select FB_MSM_MIPI_DSI
 
 config SAMSUNG_CMC624
-	bool "Support for integrated LCD controller in msm8930"
+	bool "Support for integrated LCD controller in msm8930/msm8960"
 	depends on FB && ARCH_MSM
 	default n
 
@@ -275,17 +275,18 @@ config FB_MSM_MIPI_DSI_SAMSUNG_OLED
 	bool
 	select FB_MSM_MIPI_DSI
 	default n
+
 config FB_MSM_LCDC_ST15_WXGA
-    bool
-    select FB_MSM_LCDC_PANEL
-    default n
+	bool
+	select FB_MSM_LCDC_PANEL
+	default n
 
 config FB_MSM_LCDC_ST15_PANEL
-    depends on FB_MSM_LCDC_HW
-    bool "LCDC ST1.5 Panel"
-    select FB_MSM_LCDC_ST15_WXGA
-    ---help---
-      Support for ST1.5 WXGA (1366x768) panel
+	depends on FB_MSM_LCDC_HW
+	bool "LCDC ST1.5 Panel"
+	select FB_MSM_LCDC_ST15_WXGA
+	---help---
+	  Support for ST1.5 WXGA (1366x768) panel
 
 config FB_MSM_LCDC_PRISM_WVGA
 	bool
@@ -339,7 +340,6 @@ config FB_MSM_LCDC_TRULY_HVGA_IPS3P2335_PT_PANEL
         default n
         ---help---
         Support for LCDC Truly HVGA PT panel
-
 
 config FB_MSM_LCDC_SAMSUNG_OLED_PT
 	bool
@@ -472,6 +472,7 @@ config FB_MSM_MIPI_SIMULATOR_VIDEO
 	bool
 	select FB_MSM_MIPI_DSI_SIMULATOR
 	default n
+
 config FB_MSM_NO_MDP_PIPE_CTRL
 	depends on FB_MSM_OVERLAY
 	bool "Do not use mdp_pipe_ctrl"
@@ -480,7 +481,6 @@ config FB_MSM_NO_MDP_PIPE_CTRL
 	  which was used to control mdp-related clocks. MDP4 vsync-driven
 	  screen updates will use a different clock control mechanism if
 	  this is selected.
-
 
 config FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT
 	bool
@@ -523,8 +523,8 @@ config FB_MSM_OVERLAY0_WRITEBACK
 config FB_MSM_ENABLE_LCD_EN2
 	bool "LCD_EN2 Enable for J Active project"
 	default n
-		---help---
-			Enable LCD EN2 pin to control AVDD
+	---help---
+	  Enable LCD EN2 pin to control AVDD
 
 config FB_MSM_MIPI_RENESAS_TFT_VIDEO_FULL_HD_PT
 	bool
@@ -819,6 +819,7 @@ config FB_MSM_MIPI_RENESAS_CMD_FWVGA_PT_PANEL
 config FB_MSM_MIPI_NOVATEK_VIDEO_HD_PT_PANEL
 	bool "MIPI NOVATEK VIDEO HD PT Panel"
 	select FB_MSM_MIPI_NOVATEK_VIDEO_HD_PT
+
 config FB_MSM_MIPI_CHIMEI_WXGA_PANEL
 	bool "MIPI Chimei WXGA PT Panel"
 	select FB_MSM_MIPI_CHIMEI_WXGA
@@ -945,6 +946,7 @@ endchoice
 config MIPI_SAMSUNG_ESD_REFRESH
 	bool "Samsung ESD Recovery Driver"
 	default n
+
 config FB_MSM_LCDC_DSUB
 	depends on FB_MSM_LCDC_SAMSUNG_WSVGA && FB_MSM_MDP40 && FB_MSM_LCDC_HW
 	bool "External DSUB support"
@@ -1140,9 +1142,11 @@ config FB_MSM_EBI2_PANEL_DETECT
 config MIPI_DSI_RESET_LP11	
 	bool "mipi dsi reset during LP11"
 	default n
+
 config MDP_SHUTDOWN	
 	bool "use mdp shutdown"
 	default n
+
 config FB_MDP4_ENHANCE
 	bool "MDP4 VIDEO ENHANCEMENT"
 	default n

@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2008-2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2008-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1076,10 +1076,8 @@ void mipi_dsi_wait4video_done(void)
 	mipi_dsi_irq_set(DSI_INTR_VIDEO_DONE_MASK, DSI_INTR_VIDEO_DONE_MASK);
 	spin_unlock_irqrestore(&dsi_mdp_lock, flag);
 
-	if (!wait_for_completion_timeout(&dsi_video_comp,
-					msecs_to_jiffies(200))) {
-		pr_err("%s: video_done timeout error\n", __func__);
-	}
+	wait_for_completion_timeout(&dsi_video_comp,
+					msecs_to_jiffies(VSYNC_PERIOD * 4));
 }
 
 void mipi_dsi_mdp_busy_wait(void)
@@ -1567,7 +1565,6 @@ extern struct mdp4_statistic mdp4_stat;
 int normalcase = 1;
 void dumpreg(int error)
 {
-
 	uint32 tmp0x0,tmp0x4,tmp0x8,tmp0xc;
 	int i;
 
@@ -1612,6 +1609,7 @@ void dumstate(int error)
 	pr_err("mdp_current_clk_on : %08d\n", mdp_current_clk_on);
 	pr_err("%s: ============= END ==============\n", __func__);
 }
+
 void mdp4_dump_regs(void)
 {
 	int i, z, start, len;
@@ -2024,6 +2022,7 @@ int mipi_runtime_clk_change(int fps)
 
 	return rc;
 }
+#endif
 
 #if defined(CONFIG_FB_MSM_CAMERA_CSC)
 extern int csc_updated;
@@ -2061,7 +2060,6 @@ int mipi_runtime_csc_update(uint32_t reg[][2], int length)
 	return rc;
 }
 #endif
-#endif
 
 irqreturn_t mipi_dsi_isr(int irq, void *ptr)
 {
@@ -2089,7 +2087,6 @@ irqreturn_t mipi_dsi_isr(int irq, void *ptr)
 		if (runtime_clk_chagne) {
 			if (inpdw(MDP_BASE+0x90014)) {
 				pr_debug("%s VIDEO_ENGINE BUSY", __func__);
-
 			} else {
 				mipi_dsi_configure_dividers(goal_fps);
 				runtime_clk_chagne = 0;
@@ -2134,7 +2131,6 @@ irqreturn_t mipi_dsi_isr(int irq, void *ptr)
 		if (runtime_clk_chagne) {
 			if (inpdw(MDP_BASE+0x90014)) {
 				pr_debug("%s VIDEO_ENGINE BUSY", __func__);
-
 			} else {
 				mipi_dsi_configure_dividers(goal_fps);
 				runtime_clk_chagne = 0;

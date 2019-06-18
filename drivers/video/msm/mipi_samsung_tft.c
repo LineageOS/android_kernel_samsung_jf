@@ -189,12 +189,12 @@ void lcd_hsync_onoff(bool onoff)
 	if (unlikely(mfd->key != MFD_KEY)) { pr_err("%s : panel mfd invlaid",__func__); return;}
 //		return -EINVAL;
 
-#if defined(CONFIG_MACH_JACTIVE_EUR) /* HW DEFECT under REV 0.5 */
+#if defined(CONFIG_MACH_JACTIVE_EUR) /* HW DEFECT under REV 0.6 */
 	if( system_rev > 16 )
 		return;
 #endif
 
-	if (!mdp_fb_is_power_off(mfd))
+	if (!mdp_fb_is_power_off(mfd) == TRUE)
 		{ 
 			if( onoff )
 				{
@@ -522,7 +522,7 @@ static ssize_t mipi_samsung_disp_get_power(struct device *dev,
 	if (unlikely(mfd->key != MFD_KEY))
 		return -EINVAL;
 
-	rc = snprintf((char *)buf, sizeof(*buf), "%d\n", !mdp_fb_is_power_off(mfd));
+	rc = sprintf((char *)buf, "%d\n", !mdp_fb_is_power_off(mfd));
 	pr_info("mipi_samsung_disp_get_power(%d)\n", !mdp_fb_is_power_off(mfd));
 
 	return rc;
@@ -621,8 +621,7 @@ static ssize_t mipi_samsung_auto_brightness_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(*buf), "%d\n",
-			msd.dstat.auto_brightness);
+	rc = sprintf((char *)buf, "%d\n", msd.dstat.auto_brightness);
 	pr_info("auot_brightness: %d\n", *buf);
 
 	return rc;
@@ -695,7 +694,7 @@ static ssize_t mipi_samsung_disp_backlight_show(struct device *dev,
 	if (unlikely(mfd->key != MFD_KEY))
 		return -EINVAL;
 
-	rc = snprintf((char *)buf, sizeof(*buf), "%d\n", mfd->bl_level);
+	rc = sprintf((char *)buf, "%d\n", mfd->bl_level);
 
 	return rc;
 }
@@ -752,7 +751,7 @@ static ssize_t mipi_samsung_fps_store(struct device *dev,
 	if (unlikely(mfd->key != MFD_KEY))
 		return -EINVAL;
 
-	if (mdp_fb_is_power_off(mfd)) {
+	if (!mdp_fb_is_power_off(mfd) == FALSE) {
 		pr_err("%s fps set error, panel power off 1", __func__);
 		return size;
 	}
@@ -775,7 +774,7 @@ static ssize_t mipi_samsung_fps_store(struct device *dev,
 
 	mutex_lock(&dsi_tx_mutex);
 
-	if (mdp_fb_is_power_off(mfd)) {
+	if (!mdp_fb_is_power_off(mfd) == FALSE) {
 		mutex_unlock(&dsi_tx_mutex);
 		pr_info("%s fps set error, panel power off 2", __func__);
 		return size;
@@ -795,7 +794,7 @@ static ssize_t mipi_samsung_disp_siop_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(*buf), "%d\n", msd.mpd->siop_status);
+	rc = sprintf((char *)buf, "%d\n", msd.mpd->siop_status);
 	pr_info("siop status: %d\n", *buf);
 
 	return rc;
@@ -854,6 +853,7 @@ static char tuning_file[MAX_FILE_NAME];
 
 static char mdni_tuning1[TUNE_FIRST_SIZE];
 static char mdni_tuning2[TUNE_SECOND_SIZE];
+
 #if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
 static char level1_key_enable[] = {
 	0xF0,
@@ -1010,7 +1010,7 @@ static void load_tuning_file(char *filename)
 	filp = filp_open(filename, O_RDONLY, 0);
 	if (IS_ERR(filp)) {
 		printk(KERN_ERR "%s File open failed\n", __func__);
-		return;
+		goto err;
 	}
 
 	l = filp->f_path.dentry->d_inode->i_size;
@@ -1020,7 +1020,7 @@ static void load_tuning_file(char *filename)
 	if (dp == NULL) {
 		pr_info("Can't not alloc memory for tuning file load\n");
 		filp_close(filp, current->files);
-		return;
+		goto err;
 	}
 	pos = 0;
 	memset(dp, 0, l);
@@ -1033,7 +1033,7 @@ static void load_tuning_file(char *filename)
 		pr_info("vfs_read() filed ret : %d\n", ret);
 		kfree(dp);
 		filp_close(filp, current->files);
-		return;
+		goto err;
 	}
 
 	filp_close(filp, current->files);
@@ -1043,6 +1043,10 @@ static void load_tuning_file(char *filename)
 	sending_tune_cmd(dp, l);
 
 	kfree(dp);
+
+	return;
+err:
+	set_fs(fs);
 }
 
 
@@ -1062,7 +1066,11 @@ static ssize_t tuning_store(struct device *dev,
 			    size_t size)
 {
 	char *pt;
-	memset(tuning_file, 0, sizeof(*tuning_file));
+
+	if (buf == NULL || strchr(buf, '.') || strchr(buf, '/'))
+		return size;
+
+	memset(tuning_file, 0, sizeof(tuning_file));
 	snprintf(tuning_file, MAX_FILE_NAME, "%s%s", TUNING_FILE_PATH, buf);
 
 	pt = tuning_file;

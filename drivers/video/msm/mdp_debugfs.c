@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2013, 2016, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2009-2012, 2016 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -89,7 +89,7 @@ static ssize_t mdp_offset_write(
 
 	if ((off > MDP_MAX_OFFSET) || (cnt > (MDP_MAX_OFFSET - off))) {
 		printk(KERN_INFO "%s: Invalid offset%x+cnt%d > %x\n", __func__,
-				off, cnt, MDP_MAX_OFFSET);
+			off, cnt, MDP_MAX_OFFSET);
 		return -EFAULT;
 	}
 
@@ -169,7 +169,7 @@ static ssize_t mdp_reg_write(
 
 	if (off > MDP_MAX_OFFSET) {
 		printk(KERN_INFO "%s: Invalid offset%x > %x\n", __func__,
-					off, MDP_MAX_OFFSET);
+			off, MDP_MAX_OFFSET);
 		return -EFAULT;
 	}
 
@@ -636,11 +636,18 @@ static void mddi_reg_write(int ndx, uint32 off, uint32 data)
 	else
 		base = (char *)msm_pmdh_base;
 
-	if (off > MDDI_MAX_OFFSET) {
-		printk(KERN_INFO "%s: Invalid offset=%x > %x\n", __func__,
-				off, MDDI_MAX_OFFSET);
+	if (base == NULL) {
+		printk(KERN_INFO "%s: base offset is not set properly. \
+			Please check if MDDI is enabled correctly\n", __func__);
 		return;
 	}
+
+	if (off > MDDI_MAX_OFFSET) {
+		printk(KERN_INFO "%s: Invalid offset=%x > %x\n", __func__,
+			off, MDDI_MAX_OFFSET);
+		return;
+	}
+
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 	writel(data, base + off);
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
@@ -714,7 +721,7 @@ static ssize_t pmdh_reg_write(
 
 	if (off > MDDI_MAX_OFFSET) {
 		printk(KERN_INFO "%s: Invalid offset=%x > %x\n", __func__,
-				off, MDDI_MAX_OFFSET);
+			off, MDDI_MAX_OFFSET);
 		return -EFAULT;
 	}
 
@@ -786,15 +793,7 @@ static ssize_t vsync_reg_write(
 
 	debug_buf[count] = 0;	/* end of string */
 
-	cnt = sscanf(debug_buf, "%x %x", &off, &data);
-	if (cnt != 2)
-		return -EFAULT;
-
-	if (off > MDDI_MAX_OFFSET) {
-		printk(KERN_INFO "%s: Invalid offset=%x > %x\n", __func__,
-				off, MDDI_MAX_OFFSET);
-		return -EFAULT;
-	}
+	cnt = sscanf(debug_buf, "%x", &enable);
 
 	mdp_dmap_vsync_set(enable);
 
@@ -858,6 +857,14 @@ static ssize_t emdh_reg_write(
 	debug_buf[count] = 0;	/* end of string */
 
 	cnt = sscanf(debug_buf, "%x %x", &off, &data);
+	if (cnt != 2)
+		return -EFAULT;
+
+	if (off > MDDI_MAX_OFFSET) {
+		printk(KERN_INFO "%s: Invalid offset=%x > %x\n", __func__,
+			off, MDDI_MAX_OFFSET);
+		return -EFAULT;
+	}
 
 	mddi_reg_write(1, off, data);
 
@@ -1010,7 +1017,7 @@ static ssize_t dbg_offset_write(
 
 	if ((off > MDP_MAX_OFFSET) || (num > (MDP_MAX_OFFSET - off))) {
 		printk(KERN_INFO "%s: Invalid offset%x+num%d > %x\n", __func__,
-				off, num, MDP_MAX_OFFSET);
+			off, num, MDP_MAX_OFFSET);
 		return -EFAULT;
 	}
 
@@ -1080,7 +1087,7 @@ static ssize_t dbg_reg_write(
 
 	if (off > MDP_MAX_OFFSET) {
 		printk(KERN_INFO "%s: Invalid offset%x > %x\n", __func__,
-					off, MDP_MAX_OFFSET);
+			off, MDP_MAX_OFFSET);
 		return -EFAULT;
 	}
 
@@ -1199,7 +1206,7 @@ static ssize_t hdmi_offset_write(
 
 	if ((off > HDMI_MAX_OFFSET) || (num > (HDMI_MAX_OFFSET - off))) {
 		printk(KERN_INFO "%s: Invalid offset%x+num%d > %x\n", __func__,
-				off, num, HDMI_MAX_OFFSET);
+			off, num, HDMI_MAX_OFFSET);
 		return -EFAULT;
 	}
 
@@ -1267,13 +1274,12 @@ static ssize_t hdmi_reg_write(
 	debug_buf[count] = 0;	/* end of string */
 
 	cnt = sscanf(debug_buf, "%x %x", &off, &data);
-
 	if (cnt != 2)
 		return -EFAULT;
 
 	if (off > HDMI_MAX_OFFSET) {
 		printk(KERN_INFO "%s: Invalid offset%x > %x\n", __func__,
-				off, HDMI_MAX_OFFSET);
+			off, HDMI_MAX_OFFSET);
 		return -EFAULT;
 	}
 
@@ -1409,7 +1415,7 @@ int mdp_debugfs_init(void)
 	}
 
 #if defined(CONFIG_FB_MSM_OVERLAY) && defined(CONFIG_FB_MSM_MDDI)
-	if (debugfs_create_file("vsync", 0600, dent, 0, &vsync_fops)
+	if (debugfs_create_file("vsync", 0644, dent, 0, &vsync_fops)
 			== NULL) {
 		printk(KERN_ERR "%s(%d): debugfs_create_file: debug fail\n",
 			__FILE__, __LINE__);

@@ -122,5 +122,5 @@ ssize_t video_3d_format_2string(uint32 format, char *buf, u32 size);
 
 int external_common_state_create(struct platform_device *pdev);
 void external_common_state_remove(void);
-
+u8 sii9234_mhl_get_version(void);
 #endif /* __EXTERNAL_COMMON_H__ */

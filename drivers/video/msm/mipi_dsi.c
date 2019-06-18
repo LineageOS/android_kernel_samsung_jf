@@ -158,9 +158,10 @@ static int mipi_dsi_off(struct platform_device *pdev)
 	mipi_dsi_unprepare_ahb_clocks();
 
 	usleep(5000);
-
+#if defined(CONFIG_MIPI_DSI_RESET_LP11)
 	if (mipi_dsi_pdata && mipi_dsi_pdata->active_reset)
 		mipi_dsi_pdata->active_reset(0); /* low */
+#endif
 
 	usleep(2000); /*1ms delay(minimum) required between reset low and AVDD off*/
 #if defined(CONFIG_SUPPORT_SECOND_POWER)
@@ -203,11 +204,11 @@ static int mipi_dsi_on(struct platform_device *pdev)
 #if defined(CONFIG_ESD_ERR_FG_RECOVERY)
 	pdev_for_esd = pdev;
 #endif
+
 	mfd = platform_get_drvdata(pdev);
 	fbi = mfd->fbi;
 	var = &fbi->var;
 	pinfo = &mfd->panel_info;
-	esc_byte_ratio = pinfo->mipi.esc_byte_ratio;
 
 	if (mipi_dsi_pdata && mipi_dsi_pdata->power_common)
 		mipi_dsi_pdata->power_common();
@@ -326,9 +327,9 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	}
 
 	mipi_dsi_host_init(mipi);
-
 	msleep(10);
 
+#if defined(CONFIG_MIPI_DSI_RESET_LP11)
 	/* LP11 */
 	tmp = MIPI_INP(MIPI_DSI_BASE + 0xA8);
 	tmp &= ~(1<<28);
@@ -340,11 +341,10 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	if (mipi_dsi_pdata && mipi_dsi_pdata->active_reset)
 			mipi_dsi_pdata->active_reset(1); /* high */
 	usleep(10000);
+#endif
 
 	/* always high */
 	if (mipi->force_clk_lane_hs) {
-		u32 tmp;
-
 		tmp = MIPI_INP(MIPI_DSI_BASE + 0xA8);
 		tmp |= (1<<28);
 		MIPI_OUTP(MIPI_DSI_BASE + 0xA8, tmp);
@@ -421,12 +421,6 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	return ret;
 }
 
-static int mipi_dsi_early_off(struct platform_device *pdev)
-{
-	return panel_next_early_off(pdev);
-}
-
-
 static int mipi_dsi_late_init(struct platform_device *pdev)
 {
 	return panel_next_late_init(pdev);
@@ -441,22 +435,22 @@ void esd_recovery(void)
 	if (pdev_for_esd) {
 		mfd = platform_get_drvdata(pdev_for_esd);
 
-		if (!mdp_fb_is_power_off(mfd)) {
+		if (!mdp_fb_is_power_off(mfd) == TRUE) {
 			mutex_lock(&power_state_chagne);
 
 			panel_next_off(pdev_for_esd);
 
 			if (mipi_dsi_pdata && mipi_dsi_pdata->active_reset)
 				mipi_dsi_pdata->active_reset(0); /* low */
-
+#if defined(CONFIG_SUPPORT_SECOND_POWER)
 			if (mipi_dsi_pdata && mipi_dsi_pdata->panel_power_save)
 				mipi_dsi_pdata->panel_power_save(0);
-
+#endif
 			msleep(10);
-
+#if defined(CONFIG_SUPPORT_SECOND_POWER)
 			if (mipi_dsi_pdata && mipi_dsi_pdata->panel_power_save)
 				mipi_dsi_pdata->panel_power_save(1);
-
+#endif
 			/* LP11 */
 			tmp2 = tmp = MIPI_INP(MIPI_DSI_BASE + 0xA8);
 			tmp &= ~(1<<28);
@@ -645,7 +639,6 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 	pdata->fps_level_change = mipi_dsi_fps_level_change;
 	pdata->low_power_config = mipi_dsi_low_power_config;
 	pdata->late_init = mipi_dsi_late_init;
-	pdata->early_off = mipi_dsi_early_off;
 	pdata->next = pdev;
 
 	/*
@@ -757,9 +750,6 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 	pdev_list[pdev_list_cnt++] = pdev;
 
 	esc_byte_ratio = pinfo->mipi.esc_byte_ratio;
-
-	if (!mfd->cont_splash_done)
-		cont_splash_clk_ctrl(1);
 
 return 0;
 

@@ -26,7 +26,6 @@
 #include "msm_fb.h"
 #include "hdmi_msm.h"
 #include "external_common.h"
-#include "mhl_api.h"
 #ifdef CONFIG_SAMSUNG_MHL_8240
 #include "mhl_v2/sii8240/sii8240_driver.h"
 #endif
@@ -34,7 +33,6 @@
 
 struct external_common_state_type *external_common_state;
 static int number_of_sad;
-
 EXPORT_SYMBOL(external_common_state);
 DEFINE_MUTEX(external_common_state_hpd_mutex);
 EXPORT_SYMBOL(external_common_state_hpd_mutex);
@@ -137,8 +135,8 @@ struct msm_hdmi_mode_timing_info
 	hdmi_mhl_supported_video_mode_lut[HDMI_VFRMT_MAX] = {
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_UNKNOWN),
 	HDMI_VFRMT_640x480p60_4_3_TIMING,
-	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_720x480p60_4_3),
-	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_720x480p60_16_9),
+	HDMI_VFRMT_720x480p60_4_3_TIMING,
+	HDMI_VFRMT_720x480p60_16_9_TIMING,
 	HDMI_VFRMT_1280x720p60_16_9_TIMING,
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_1920x1080i60_16_9),
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_1440x480i60_4_3),
@@ -153,8 +151,8 @@ struct msm_hdmi_mode_timing_info
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_1440x480p60_16_9),
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_1920x1080p60_16_9),
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_720x576p50_4_3),
-	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_720x576p50_16_9),
-	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_1280x720p50_16_9),
+	HDMI_VFRMT_720x576p50_16_9_TIMING,
+	HDMI_VFRMT_1280x720p50_16_9_TIMING,
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_1920x1080i50_16_9),
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_1440x576i50_4_3),
 	VFRMT_NOT_SUPPORTED(HDMI_VFRMT_1440x576i50_16_9),
@@ -1691,11 +1689,12 @@ static void add_supported_video_format(
 	DEV_DBG("EDID: format: %d [%s], %s\n",
 		video_format, msm_hdmi_mode_2string(video_format),
 		supported ? "Supported" : "Not-Supported");
-	if (mhl_is_connected()
 #if defined (CONFIG_SAMSUNG_MHL_8240)
-		|| (0x01 != sii8240_mhl_get_version())
+		if (0x01 != sii8240_mhl_get_version())
+#else
+		if (0x01 != sii9234_mhl_get_version())
 #endif
-	){
+	{
 		const struct msm_hdmi_mode_timing_info *mhl_timing =
 			hdmi_mhl_get_supported_mode(video_format);
 		mhl_supported = mhl_timing != NULL;
@@ -2217,6 +2216,7 @@ int hdmi_common_read_edid(void)
 #else
 	uint32 i = 1;
 	uint8 edid_buf[0x80 * 4];
+	status = hdmi_common_read_edid_block(0, edid_buf);
 #endif
 
 	/* Default 2ch-audio */
@@ -2347,7 +2347,11 @@ EXPORT_SYMBOL(hdmi_common_read_edid);
 
 bool hdmi_common_get_video_format_from_drv_data(struct msm_fb_data_type *mfd)
 {
+#ifdef  CONFIG_SAMSUNG_MHL_8240
 	uint32 format = HDMI_VFRMT_1920x1080p60_16_9;
+#else
+	uint32 format = HDMI_VFRMT_1920x1080p30_16_9;
+#endif
 	struct fb_var_screeninfo *var = &mfd->fbi->var;
 	bool changed = TRUE;
 	uint32_t userformat = 0;
@@ -2400,7 +2404,11 @@ bool hdmi_common_get_video_format_from_drv_data(struct msm_fb_data_type *mfd)
 				else if (mfd->var_frame_rate == 30)
 					format = HDMI_VFRMT_1920x1080p30_16_9;
 				else
+#ifdef CONFIG_SAMSUNG_MHL_8240
 					format = HDMI_VFRMT_1920x1080p60_16_9;
+#else
+					format = HDMI_VFRMT_1920x1080p30_16_9;
+#endif
 			}
 			break;
 		}
