@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -16,6 +16,8 @@
 
 #include <mach/scm-io.h>
 #include <linux/list.h>
+#include "msm_fb_def.h"
+#include "msm_fb.h"
 
 #if defined(CONFIG_ESD_ERR_FG_RECOVERY)
 #include "mdnie_lite_tuning.h"
@@ -88,6 +90,7 @@ enum dsi_trigger_type {
 	DSI_CMD_MODE_DMA,
 	DSI_CMD_MODE_MDP,
 };
+
 
 #define DSI_NON_BURST_SYNCH_PULSE	0
 #define DSI_NON_BURST_SYNCH_EVENT	1
@@ -409,6 +412,7 @@ void update_lane_config(struct msm_panel_info *pinfo);
 
 #if defined(RUMTIME_MIPI_CLK_CHANGE)
 int mipi_runtime_clk_change(int fps);
+void mipi_dsi_configure_dividers(int fps);
 #endif
 
 void mipi_dsi_irq_set(uint32 mask, uint32 irq);

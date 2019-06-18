@@ -294,7 +294,7 @@ int mdp4_dsi_cmd_pipe_commit(int cndx, int wait, u32 *release_busy)
 /*
  * allow stage_commit without pipes queued
  * (vp->update_cnt == 0) to unstage pipes after
- * overlay_unset                               
+ * overlay_unset
  */
 	vctrl->update_ndx++;
 	vctrl->update_ndx &= 0x01;
@@ -401,6 +401,7 @@ int mdp4_dsi_cmd_pipe_commit(int cndx, int wait, u32 *release_busy)
 	spin_unlock_irqrestore(&vctrl->spin_lock, flags);
 
 	mdp4_stat.overlay_commit[pipe->mixer_num]++;
+
 	if (wait) {
 		if (release_busy) {
 			msm_fb_release_busy(vctrl->mfd);
@@ -412,7 +413,7 @@ int mdp4_dsi_cmd_pipe_commit(int cndx, int wait, u32 *release_busy)
 		else
 			mdp4_dsi_cmd_wait4dmap(0);
 	}
-	
+
 	return cnt;
 }
 

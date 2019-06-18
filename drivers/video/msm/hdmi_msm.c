@@ -57,7 +57,7 @@ static int msm_hdmi_sample_rate = MSM_HDMI_SAMPLE_RATE_48KHZ;
 #define HDCP_DDC_CTRL_0		0x0120
 #define HDCP_DDC_CTRL_1		0x0124
 #define HDMI_DDC_CTRL		0x020C
-
+#define CONFIG_HDMI_READ_EDID
 
 #define HPD_DISCONNECT_POLARITY	0
 #define HPD_CONNECT_POLARITY	1
@@ -80,8 +80,11 @@ static int msm_hdmi_sample_rate = MSM_HDMI_SAMPLE_RATE_48KHZ;
 struct workqueue_struct *hdmi_work_queue;
 struct hdmi_msm_state_type *hdmi_msm_state;
 
-/* Enable HDCP by default */
+#ifdef CONFIG_SAMSUNG_MHL_8240
 static bool hdcp_feature_on = false;
+#else
+static bool hdcp_feature_on = true;
+#endif
 
 DEFINE_MUTEX(hdmi_msm_state_mutex);
 EXPORT_SYMBOL(hdmi_msm_state_mutex);
@@ -640,10 +643,11 @@ static void hdmi_msm_setup_video_mode_lut(void)
 	/* Add all supported CEA modes to the lut */
 	MSM_HDMI_MODES_SET_SUPP_TIMINGS(
 		hdmi_common_supported_video_mode_lut, MSM_HDMI_MODES_CEA);
-
+#ifndef CONFIG_VIDEO_MHL_V2
 	/* Add any other supported timings (DVI modes, etc.) */
 	MSM_HDMI_MODES_SET_TIMING(hdmi_common_supported_video_mode_lut,
 		HDMI_VFRMT_1280x1024p60_5_4);
+#endif
 }
 
 #ifdef PORT_DEBUG
@@ -766,6 +770,28 @@ static void hdmi_msm_turn_on(void);
 static int hdmi_msm_audio_off(void);
 static int hdmi_msm_read_edid(void);
 static void hdmi_msm_hpd_off(void);
+static int hdmi_msm_hpd_on(void);
+
+#if defined(CONFIG_VIDEO_MHL_V1) || defined(CONFIG_VIDEO_MHL_V2) \
+		|| defined(CONFIG_VIDEO_MHL_TAB_V2)
+#if !defined CONFIG_SAMSUNG_MHL_8240
+void mhl_hpd_handler(bool state)
+{
+	pr_info("mhl_hpd_handler with state as %d\n", state);
+	hdmi_msm_state->mhl_hpd_state = state;
+
+	if (state && hdmi_msm_state->boot_completion) {
+		/*To make sure that the previous
+		 disconnect event handling  is completed.*/
+		msleep(20);
+		hdmi_msm_hpd_on();
+	} else if (!hdmi_msm_state->boot_completion) {
+		pr_err("hdmi_msm_state->boot_completion = %d\n",
+			hdmi_msm_state->boot_completion);
+	}
+}
+#endif
+#endif
 
 static bool hdmi_ready(void)
 {
@@ -2333,6 +2359,7 @@ static int hdcp_authentication_part1(void)
 {
 	int ret = 0;
 	boolean is_match;
+	bool stale_an = false;
 	boolean is_part1_done = FALSE;
 	uint32 timeout_count;
 	uint8 bcaps;
@@ -2388,6 +2415,13 @@ static int hdcp_authentication_part1(void)
 		 * before enabling HDCP. */
 		HDMI_OUTP(0x0288, qfprom_aksv_0);
 		HDMI_OUTP(0x0284, qfprom_aksv_1);
+
+		/* Check for link0_Status stale values for An ready bit */
+		if (HDMI_INP_ND(0x011C) & (BIT(8) | BIT(9))) {
+			DEV_WARN("%s: An ready even before enabling HDCP\n",
+				__func__);
+			stale_an = true;
+		}
 
 		msm_hdmi_init_ddc();
 
@@ -2456,16 +2490,49 @@ static int hdcp_authentication_part1(void)
 		/* enable all HDCP ints */
 		HDMI_OUTP(0x0118, (1 << 2) | (1 << 6) | (1 << 7));
 
+		/* Wait for HDCP keys to be checked and validated */
+		timeout_count = 100;
+		while ((((HDMI_INP(0x011C) >> 28) & 0x7) != 0x3) &&
+			timeout_count) {
+			DEV_DBG("%s: Keys not ready(%d)\n", __func__,
+				timeout_count);
+			timeout_count--;
+			msleep(20);
+		}
+
+		if (!timeout_count) {
+			DEV_ERR("%s: KEYS NOT READY\n", __func__);
+			/* three bits 28..30 */
+			hdcp_key_state((HDMI_INP(0x011C) >> 28) & 0x7);
+			goto error;
+		}
+
+		mutex_lock(&hdcp_auth_state_mutex);
+
+		/* 0x0168 HDCP_RCVPORT_DATA12
+		   [23:8] BSTATUS
+		   [7:0] BCAPS */
+		HDMI_OUTP(0x0168, bcaps);
+
+		/* Check for link0_Status stale values for An ready bit */
+		if (!(HDMI_INP_ND(0x011C) & (BIT(8) | BIT(9)))) {
+			DEV_DBG("%s: An not ready after enabling HDCP\n",
+				__func__);
+			stale_an = false;
+		}
+
+
 		/* 0x011C HDCP_LINK0_STATUS
 		[8] AN_0_READY
 		[9] AN_1_READY */
 		/* wait for an0 and an1 ready bits to be set in LINK0_STATUS */
 
-		mutex_lock(&hdcp_auth_state_mutex);
 		timeout_count = 100;
 		while (((HDMI_INP_ND(0x011C) & (0x3 << 8)) != (0x3 << 8))
-			&& timeout_count--)
+			&& timeout_count) {
 			msleep(20);
+			timeout_count--;
+		}
 		if (!timeout_count) {
 			ret = -ETIMEDOUT;
 			DEV_ERR("%s(%d): timedout, An0=%d, An1=%d\n",
@@ -2475,11 +2542,15 @@ static int hdcp_authentication_part1(void)
 			mutex_unlock(&hdcp_auth_state_mutex);
 			goto error;
 		}
-
-		/* 0x0168 HDCP_RCVPORT_DATA12
-		   [23:8] BSTATUS
-		   [7:0] BCAPS */
-		HDMI_OUTP(0x0168, bcaps);
+		/*
+		 * In cases where An_ready bits had stale values, it would be
+		 * better to delay reading of An to avoid any potential of this
+		 * read being blocked
+		 */
+		if (stale_an) {
+			msleep(200);
+			stale_an = false;
+		}
 
 		/* 0x014C HDCP_RCVPORT_DATA5
 		   [31:0] LINK0_AN_0 */
@@ -2491,9 +2562,6 @@ static int hdcp_authentication_part1(void)
 		/* read an1 calculation */
 		link0_an_1 = HDMI_INP(0x0150);
 		mutex_unlock(&hdcp_auth_state_mutex);
-
-		/* three bits 28..30 */
-		hdcp_key_state((HDMI_INP(0x011C) >> 28) & 0x7);
 
 		/* 0x0144 HDCP_RCVPORT_DATA3
 		[31:0] LINK0_AKSV_0 public key
@@ -2635,7 +2703,6 @@ error:
 		return 1;
 	}
 }
-
 static int hdmi_msm_transfer_v_h(void)
 {
 	/* Read V'.HO 4 Byte at offset 0x20 */
@@ -3668,8 +3735,8 @@ static uint8 hdmi_msm_avi_iframe_lut[][17] = {
 	{0x18,	0x18,	0x28,	0x28,	0x28,	 0x28,	0x28,	0x28,	0x28,
 	 0x28,	0x28,	0x28,	0x28,	0x18, 0x28, 0x18, 0x08}, /*01*/
 	/* Data Byte 03: ITC EC2 EC1 EC0 Q1 Q0 SC1 SC0 */
-	{0x00,	0x04,	0x04,	0x04,	0x04,	 0x04,	0x04,	0x04,	0x04,
-	 0x04,	0x04,	0x04,	0x04,	0x88, 0x00, 0x04, 0x04}, /*02*/
+	{0x00,	0x00,	0x00,	0x00,	0x00,	 0x00,	0x00,	0x00,	0x00,
+	 0x00,	0x00,	0x00,	0x00,	0x88, 0x00, 0x00, 0x00}, /*02*/
 	/* Data Byte 04: 0 VIC6 VIC5 VIC4 VIC3 VIC2 VIC1 VIC0 */
 	{0x02,	0x06,	0x12,	0x15,	0x04,	 0x13,	0x10,	0x05,	0x1F,
 	 0x14,	0x20,	0x22,	0x21,	0x01, 0x03, 0x11, 0x00}, /*03*/
@@ -4555,8 +4622,14 @@ static int hdmi_msm_power_off(struct platform_device *pdev)
 	if (!hdmi_msm_is_dvi_mode())
 		hdmi_msm_audio_off();
 
+#if !defined CONFIG_SAMSUNG_MHL_8240
+	hdmi_msm_hpd_off();
+#endif
 	hdmi_msm_powerdown_phy();
-
+#if !defined CONFIG_SAMSUNG_MHL_8240
+	if (hdmi_msm_state->mhl_hpd_state)
+		hdmi_msm_hpd_on();
+#endif
 	hdmi_msm_state->panel_power_on = FALSE;
 	DEV_INFO("power: OFF (audio off)\n");
 
@@ -4845,8 +4918,15 @@ static int hdmi_msm_hpd_feature(int on)
 	int rc = 0;
 
 	DEV_INFO("%s: %d\n", __func__, on);
+#if !defined CONFIG_SAMSUNG_MHL_8240
+	hdmi_msm_state->boot_completion = true;
+#endif
 	if (on) {
+#ifdef CONFIG_SAMSUNG_MHL_8240
 		if (external_common_state->sii8240_connected)
+#else
+		if (hdmi_msm_state->mhl_hpd_state)
+#endif
 			rc = hdmi_msm_hpd_on();
 	} else {
 		if (external_common_state->hpd_state) {
@@ -4923,9 +5003,13 @@ static int __init hdmi_msm_init(void)
 		external_common_state->video_resolution =
 			hdmi_prim_resolution - 1;
 	else
+#ifdef CONFIG_SAMSUNG_MHL_8240
 		external_common_state->video_resolution =
 			HDMI_VFRMT_1920x1080p60_16_9;
-
+#else
+		external_common_state->video_resolution =
+			HDMI_VFRMT_1920x1080p30_16_9;
+#endif
 #ifdef CONFIG_FB_MSM_HDMI_3D
 	external_common_state->switch_3d = hdmi_msm_switch_3d;
 #endif

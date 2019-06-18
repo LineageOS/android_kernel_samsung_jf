@@ -71,10 +71,16 @@ int load_565rle_image(char *filename, bool bf_supported)
 	int fd, count, err = 0;
 	unsigned max;
 	unsigned short *data, *bits, *ptr;
+	static int skip_logo;
 #ifndef CONFIG_FRAMEBUFFER_CONSOLE
 	struct module *owner;
 #endif
 	int pad;
+	/*  Skip logo display after fb[0] register since mdp and DSI is not ready*/
+	if(!skip_logo) {
+		skip_logo = 1;
+		return 0;
+	}
 
 	info = registered_fb[0];
 	if (!info) {
@@ -136,10 +142,10 @@ int load_565rle_image(char *filename, bool bf_supported)
 			} else {
 				memset16(bits, ptr[1], n << 1);
 				bits += n;
-				max -= n;
-				ptr += 2;
-				count -= 4;
 			}
+			max -= n;
+			ptr += 2;
+			count -= 4;
 		}
 	}
 #ifndef CONFIG_FRAMEBUFFER_CONSOLE
@@ -158,4 +164,60 @@ err_logo_close_file:
 	return err;
 }
 EXPORT_SYMBOL(load_565rle_image);
+
+int draw_rgb888_screen(void)
+{
+	struct fb_info *fb = registered_fb[0];
+	u32 height = fb->var.yres / 5;
+	u32 line = fb->fix.line_length;
+	u32 i, j;
+
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < fb->var.xres; j++) {
+			memset(fb->screen_base + i * line + j * 4 + 0, 0xff, 1);
+			memset(fb->screen_base + i * line + j * 4 + 1, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 2, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 3, 0x00, 1);
+		}
+	}
+
+	for (i = height; i < height * 2; i++) {
+		for (j = 0; j < fb->var.xres; j++) {
+			memset(fb->screen_base + i * line + j * 4 + 0, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 1, 0xff, 1);
+			memset(fb->screen_base + i * line + j * 4 + 2, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 3, 0x00, 1);
+		}
+	}
+
+	for (i = height * 2; i < height * 3; i++) {
+		for (j = 0; j < fb->var.xres; j++) {
+			memset(fb->screen_base + i * line + j * 4 + 0, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 1, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 2, 0xff, 1);
+			memset(fb->screen_base + i * line + j * 4 + 3, 0x00, 1);
+		}
+	}
+
+	for (i = height * 3; i < height * 4; i++) {
+		for (j = 0; j < fb->var.xres; j++) {
+			memset(fb->screen_base + i * line + j * 4 + 0, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 1, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 2, 0x00, 1);
+			memset(fb->screen_base + i * line + j * 4 + 3, 0xff, 1);
+		}
+	}
+
+	for (i = height * 4; i < height * 5; i++) {
+		for (j = 0; j < fb->var.xres; j++) {
+			memset(fb->screen_base + i * line + j * 4 + 0, 0xff, 1);
+			memset(fb->screen_base + i * line + j * 4 + 1, 0xff, 1);
+			memset(fb->screen_base + i * line + j * 4 + 2, 0xff, 1);
+			memset(fb->screen_base + i * line + j * 4 + 3, 0x00, 1);
+		}
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL(draw_rgb888_screen);
 
