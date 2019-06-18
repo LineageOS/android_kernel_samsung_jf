@@ -202,6 +202,10 @@ static ssize_t tuning_show(struct device *dev,
 static ssize_t tuning_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t size)
 {
+
+	if (buf == NULL || strchr(buf, '.') || strchr(buf, '/'))
+		return size;
+
 	memset(tuning_filename, 0, sizeof(tuning_filename));
 	strcpy(tuning_filename, "/sdcard/tuning/");
 	strncat(tuning_filename, buf, size-1);

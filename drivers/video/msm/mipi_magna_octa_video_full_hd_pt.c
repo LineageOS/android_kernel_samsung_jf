@@ -99,7 +99,7 @@ static char magna_pentile[] = {
 
 static char magna_power_control[] = {
 	0xF4,
-	0x20, 0x10,
+	0x02, 0x10,
 };
 
 static char magna_ss_control[] = {

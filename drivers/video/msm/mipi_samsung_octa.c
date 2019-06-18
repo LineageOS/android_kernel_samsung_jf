@@ -629,7 +629,7 @@ int touch_tout1_on(void)
 	if (unlikely(mfd->key != MFD_KEY))
 		return -EINVAL;
 
-	if (!mdp_fb_is_power_off(mfd)) {
+	if (!mdp_fb_is_power_off(mfd) == TRUE) {
 		mipi_samsung_disp_send_cmd(mfd, PANLE_TOUCH_KEY, true);
 		pr_info("%s", __func__);
 	}
@@ -1024,7 +1024,7 @@ static ssize_t mipi_samsung_fps_store(struct device *dev,
 
 	mfd = platform_get_drvdata(msd.msm_pdev);
 
-	if (mdp_fb_is_power_off(mfd)) {
+	if (!mdp_fb_is_power_off(mfd) == FALSE) {
 		pr_err("%s fps set error, panel power off 1", __func__);
 		return size;
 	}
@@ -1047,7 +1047,7 @@ static ssize_t mipi_samsung_fps_store(struct device *dev,
 
 	mutex_lock(&dsi_tx_mutex);
 
-	if (mdp_fb_is_power_off(mfd)) {
+	if (!mdp_fb_is_power_off(mfd) == FALSE) {
 		mutex_unlock(&dsi_tx_mutex);
 		pr_info("%s fps set error, panel power off 2", __func__);
 		return size;
@@ -1310,7 +1310,7 @@ static void load_tuning_file(char *filename)
 	filp = filp_open(filename, O_RDONLY, 0);
 	if (IS_ERR(filp)) {
 		printk(KERN_ERR "%s File open failed\n", __func__);
-		return;
+		goto err;
 	}
 
 	l = filp->f_path.dentry->d_inode->i_size;
@@ -1320,7 +1320,7 @@ static void load_tuning_file(char *filename)
 	if (dp == NULL) {
 		pr_info("Can't not alloc memory for tuning file load\n");
 		filp_close(filp, current->files);
-		return;
+		goto err;
 	}
 	pos = 0;
 	memset(dp, 0, l);
@@ -1333,7 +1333,7 @@ static void load_tuning_file(char *filename)
 		pr_info("vfs_read() filed ret : %d\n", ret);
 		kfree(dp);
 		filp_close(filp, current->files);
-		return;
+		goto err;
 	}
 
 	filp_close(filp, current->files);
@@ -1343,6 +1343,10 @@ static void load_tuning_file(char *filename)
 	sending_tune_cmd(dp, l);
 
 	kfree(dp);
+
+	return;
+err:
+	set_fs(fs);
 }
 
 
@@ -1362,6 +1366,10 @@ static ssize_t tuning_store(struct device *dev,
 			    size_t size)
 {
 	char *pt;
+
+	if (buf == NULL || strchr(buf, '.') || strchr(buf, '/'))
+		return size;
+
 	memset(tuning_file, 0, sizeof(tuning_file));
 	snprintf(tuning_file, MAX_FILE_NAME, "%s%s", TUNING_FILE_PATH, buf);
 
@@ -1557,7 +1565,7 @@ static struct platform_driver this_driver = {
 static struct msm_fb_panel_data samsung_panel_data = {
 	.late_init = mipi_samsung_disp_on_in_video_engine,
 	.on		= mipi_samsung_disp_on,
-	.early_off		= mipi_samsung_disp_off,
+	.off		= mipi_samsung_disp_off,
 	.set_backlight	= mipi_samsung_disp_backlight,
 };
 

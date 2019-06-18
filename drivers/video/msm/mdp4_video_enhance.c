@@ -40,6 +40,9 @@
 #include "msm_fb.h"
 #include "mdp.h"
 #include "mdp4.h"
+extern int mdp_lut_i;
+extern int mdp_lut_push;
+extern int mdp_lut_push_i;
 
 #define MDP4_VIDEO_ENHANCE_TUNING
 #define VIDEO_ENHANCE_DEBUG
@@ -109,7 +112,7 @@ static int parse_text(char *src, int len)
 	int i, count, ret;
 	int index = 0;
 	int j = 0;
-	char *str_line[300];
+	char *str_line[252];
 	char *sstart;
 	char *c;
 	unsigned int data1, data2, data3;
@@ -177,7 +180,7 @@ static int load_tuning_data(char *filename)
 	filp = filp_open(filename, O_RDONLY, 0);
 	if (IS_ERR(filp)) {
 		printk(KERN_ERR "[CMC623:ERROR]:File open failed\n");
-		return -1;
+		goto err;
 	}
 
 	l = filp->f_path.dentry->d_inode->i_size;
@@ -189,7 +192,7 @@ static int load_tuning_data(char *filename)
 		    ("[CMC623:ERROR]:Can't not alloc memory"\
 			"for tuning file load\n");
 		filp_close(filp, current->files);
-		return -1;
+		goto err;
 	}
 	pos = 0;
 	memset(dp, 0, l);
@@ -201,7 +204,7 @@ static int load_tuning_data(char *filename)
 		DPRINT("[CMC623:ERROR] : vfs_read() filed ret : %d\n", ret);
 		kfree(dp);
 		filp_close(filp, current->files);
-		return -1;
+		goto err;
 	}
 
 	filp_close(filp, current->files);
@@ -221,6 +224,9 @@ static int load_tuning_data(char *filename)
 
 	kfree(dp);
 	return num;
+err:
+	set_fs(fs);
+	return -1;
 }
 
 static ssize_t tuning_show(struct device *dev,
@@ -237,6 +243,10 @@ static ssize_t tuning_store(struct device *dev,
 			    size_t size)
 {
 	char *pt;
+
+	if (buf == NULL || strchr(buf, '.') || strchr(buf, '/'))
+		return size;
+
 	memset(tuning_filename, 0, sizeof(tuning_filename));
 	sprintf(tuning_filename, "%s%s", TUNING_FILE_PATH, buf);
 
@@ -279,6 +289,7 @@ void lut_tune(int num, unsigned int *pLutTable)
 	struct fb_cmap *cmap;
 	struct msm_fb_data_type *mfd;
 	uint32_t out;
+	unsigned long flags;
 
 	/*for final assignment*/
 	u16 r_1, g_1, b_1;
@@ -347,10 +358,10 @@ void lut_tune(int num, unsigned int *pLutTable)
 	mfd = (struct msm_fb_data_type *) registered_fb[0]->par;
 	if (mfd->panel.type == MIPI_CMD_PANEL) {
 		mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
-		mutex_lock(&mdp_lut_push_sem);
+		spin_lock_irqsave(&mdp_lut_push_lock, flags);
 		mdp_lut_push = 1;
 		mdp_lut_push_i = mdp_lut_i;
-		mutex_unlock(&mdp_lut_push_sem);
+		spin_unlock_irqrestore(&mdp_lut_push_lock, flags);
 	} else {
 		/*mask off non LUT select bits*/
 		out = inpdw(MDP_BASE + 0x90070) & ~((0x1 << 10) | 0x7);
