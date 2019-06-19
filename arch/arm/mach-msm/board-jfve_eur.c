@@ -5357,8 +5357,10 @@ static void __init apq8064_common_init(void)
 	if (!poweroff_charging) {
 		if (sec_tsp_synaptics_mode)
 			S5000_tsp_input_init(lcd_tsp_panel_version);
+#if defined(CONFIG_TOUCHSCREEN_ATMEL_MXTS)
 		else
 			mxt540s_tsp_input_init();
+#endif
 		}
 #endif
 
