@@ -225,7 +225,11 @@ static void max77693_set_input_current(struct max77693_charger_data *charger,
 	int chg_state;
 
 	mutex_lock(&charger->ops_lock);
-	disable_irq(charger->irq_chgin);
+	reg_data = 0;
+	reg_data = (1 << CHGIN_SHIFT);
+	max77693_update_reg(charger->max77693->i2c, MAX77693_CHG_REG_CHG_INT_MASK, reg_data,
+			CHGIN_MASK);
+
 	if (charger->cable_type == POWER_SUPPLY_TYPE_WIRELESS)
 		set_reg = MAX77693_CHG_REG_CHG_CNFG_10;
 	else
@@ -338,7 +342,10 @@ set_input_current:
 	max77693_write_reg(charger->max77693->i2c,
 		set_reg, set_current_reg);
 exit:
-	enable_irq(charger->irq_chgin);
+	reg_data = 0;
+	reg_data = (0 << CHGIN_SHIFT);
+	max77693_update_reg(charger->max77693->i2c, MAX77693_CHG_REG_CHG_INT_MASK, reg_data,
+			CHGIN_MASK);
 	mutex_unlock(&charger->ops_lock);
 }
 
@@ -1147,7 +1154,7 @@ static irqreturn_t wpc_charger_irq(int irq, void *data)
 	if (chg_data->wc_w_state)
 		delay = msecs_to_jiffies(500);
 	else
-		delay = msecs_to_jiffies(0);
+		delay = msecs_to_jiffies(200);
 #endif
 	queue_delayed_work(chg_data->wqueue, &chg_data->wpc_work,
 			delay);
@@ -1242,8 +1249,12 @@ static void max77693_chgin_isr_work(struct work_struct *work)
 	int battery_health;
 	union power_supply_propval value;
 	int stable_count = 0;
+	u8 reg_data;
 
-	disable_irq(charger->irq_chgin);
+	reg_data = 0;
+	reg_data = (1 << CHGIN_SHIFT);
+	max77693_update_reg(charger->max77693->i2c, MAX77693_CHG_REG_CHG_INT_MASK, reg_data,
+			CHGIN_MASK);
 
 	while (1) {
 		psy_do_property("battery", get,
@@ -1320,7 +1331,10 @@ static void max77693_chgin_isr_work(struct work_struct *work)
 		prev_chgin_dtls = chgin_dtls;
 		msleep(100);
 	}
-	enable_irq(charger->irq_chgin);
+	reg_data = 0;
+	reg_data = (0 << CHGIN_SHIFT);
+	max77693_update_reg(charger->max77693->i2c, MAX77693_CHG_REG_CHG_INT_MASK, reg_data,
+			CHGIN_MASK);
 }
 
 static irqreturn_t max77693_chgin_irq(int irq, void *data)
