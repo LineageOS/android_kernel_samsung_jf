@@ -94,8 +94,8 @@
 #define EDGE_SWIPE_DATA_OFFSET	8
 
 #define EDGE_SWIPE_WIDTH_MAX	255
-#define EDGE_SWIPE_ANGLE_MIN	(-90)
-#define EDGE_SWIPE_ANGLE_MAX	90
+//#define EDGE_SWIPE_ANGLE_MIN	(-90)
+//#define EDGE_SWIPE_ANGLE_MAX	90
 #define EDGE_SWIPE_PALM_MAX		1
 #endif
 
@@ -1284,8 +1284,8 @@ static int synaptics_rmi4_f12_abs_report(struct synaptics_rmi4_data *rmi4_data,
 			wy = finger_data->wy;
 #ifdef EDGE_SWIPE
 			if (f51) {
-				if ((f51->proximity_controls & HAS_EDGE_SWIPE)
-					&& f51->surface_data.palm) {
+				if ((f51->proximity_controls & HAS_EDGE_SWIPE)) {
+//					&& f51->surface_data.palm) {
 					wx = f51->surface_data.wx;
 					wy = f51->surface_data.wy;
 				}
@@ -1316,8 +1316,8 @@ static int synaptics_rmi4_f12_abs_report(struct synaptics_rmi4_data *rmi4_data,
 				if (f51->proximity_controls & HAS_EDGE_SWIPE) {
 					input_report_abs(rmi4_data->input_dev,
 							ABS_MT_WIDTH_MAJOR, f51->surface_data.width_major);
-					input_report_abs(rmi4_data->input_dev,
-							ABS_MT_ANGLE, f51->surface_data.angle);
+					/*input_report_abs(rmi4_data->input_dev,
+							ABS_MT_ANGLE, f51->surface_data.angle);*/
 					input_report_abs(rmi4_data->input_dev,
 							ABS_MT_PALM, f51->surface_data.palm);
 				}
@@ -1485,7 +1485,7 @@ static int synaptics_rmi4_f51_edge_swipe(struct synaptics_rmi4_data *rmi4_data,
 	if (!f51)
 		return -ENODEV;
 
-	if (data->edge_swipe_dg >= 90 && data->edge_swipe_dg <= 180)
+	/*if (data->edge_swipe_dg >= 90 && data->edge_swipe_dg <= 180)
 #if defined(CONFIG_MACH_JACTIVE_EUR)
 		f51->surface_data.angle = data->edge_swipe_dg - 90;
 #else
@@ -1502,6 +1502,7 @@ static int synaptics_rmi4_f51_edge_swipe(struct synaptics_rmi4_data *rmi4_data,
 				"Skip wrong edge swipe angle [%d]\n",
 				data->edge_swipe_dg);
 
+*/
 	f51->surface_data.width_major = data->edge_swipe_mm;
 	f51->surface_data.wx = data->edge_swipe_wx;
 	f51->surface_data.wy = data->edge_swipe_wy;
@@ -3052,9 +3053,9 @@ static int synaptics_rmi4_set_input_device
 	input_set_abs_params(rmi4_data->input_dev,
 			ABS_MT_WIDTH_MAJOR, 0,
 			EDGE_SWIPE_WIDTH_MAX, 0, 0);
-	input_set_abs_params(rmi4_data->input_dev,
+	/*input_set_abs_params(rmi4_data->input_dev,
 			ABS_MT_ANGLE, 0,
-			EDGE_SWIPE_ANGLE_MAX, 0, 0);
+			EDGE_SWIPE_ANGLE_MAX, 0, 0);*/
 	input_set_abs_params(rmi4_data->input_dev,
 			ABS_MT_PALM, 0,
 			EDGE_SWIPE_PALM_MAX, 0, 0);
@@ -3963,6 +3964,7 @@ static int synaptics_rmi4_suspend(struct device *dev)
 				__func__);
 		}
 	}
+
 	mutex_unlock(&rmi4_data->input_dev->mutex);
 
 	return 0;
@@ -3989,8 +3991,15 @@ static int synaptics_rmi4_resume(struct device *dev)
 
 	if (rmi4_data->input_dev->users) {
 		if (rmi4_data->touch_stopped) {
+#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
+			rmi4_data->board->hsync_onoff(false);
+#endif
 			rmi4_data->board->power(true);
 			rmi4_data->touch_stopped = false;
+			rmi4_data->current_page = MASK_8BIT;
+#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
+			rmi4_data->board->hsync_onoff(true);
+#endif
 
 			retval = synaptics_rmi4_reinit_device(rmi4_data);
 			if (retval < 0) {
@@ -3998,6 +4007,10 @@ static int synaptics_rmi4_resume(struct device *dev)
 						"%s: Failed to reinit device\n",
 						__func__);
 			}
+
+			if (rmi4_data->ta_status)
+				synaptics_charger_conn(rmi4_data, rmi4_data->ta_status);
+
 			enable_irq(rmi4_data->i2c_client->irq);
 
 			dev_dbg(&rmi4_data->i2c_client->dev, "%s -\n", __func__);
@@ -4006,6 +4019,13 @@ static int synaptics_rmi4_resume(struct device *dev)
 				__func__);
 		}
 	}
+
+#ifdef CONFIG_FB_MSM_MIPI_SAMSUNG_OCTA_VIDEO_FULL_HD_PT_PANEL
+	retval = rmi4_data->board->tout1_on();
+	if (retval)
+		dev_err(&rmi4_data->i2c_client->dev,
+				"%s: touch_tout1_on failed\n", __func__);
+#endif
 
 	mutex_unlock(&rmi4_data->input_dev->mutex);
 
