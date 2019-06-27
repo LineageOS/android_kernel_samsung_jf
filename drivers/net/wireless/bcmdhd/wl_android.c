@@ -1031,6 +1031,12 @@ int wl_android_send_action_frame(struct net_device *dev, char *command, int tota
 		goto send_action_frame_out;
 	}
 
+	if (params->len > ANDROID_WIFI_ACTION_FRAME_SIZE) {
+		DHD_ERROR(("%s: Requested action frame len was out of range(%d)\n",
+			__FUNCTION__, params->len));
+		goto send_action_frame_out;
+	}
+
 	smbuf = kmalloc(WLC_IOCTL_MAXLEN, GFP_KERNEL);
 	if (smbuf == NULL) {
 		DHD_ERROR(("%s: failed to allocated memory %d bytes\n",
@@ -1288,8 +1294,9 @@ wls_parse_batching_cmd(struct net_device *dev, char *command, int total_len)
 					" <> params\n", __FUNCTION__));
 					goto exit;
 				}
-					while ((token2 = strsep(&pos2,
-					PNO_PARAM_CHANNEL_DELIMETER)) != NULL) {
+
+				while ((token2 = strsep(&pos2, PNO_PARAM_CHANNEL_DELIMETER))
+						!= NULL) {
 					if (token2 == NULL || !*token2)
 						break;
 					if (*token2 == '\0')
@@ -1300,11 +1307,18 @@ wls_parse_batching_cmd(struct net_device *dev, char *command, int total_len)
 						DHD_PNO(("band : %s\n",
 							(*token2 == 'A')? "A" : "B"));
 					} else {
+						if ((batch_params.nchan >= WL_NUMCHANNELS) ||
+						    	(i >= WL_NUMCHANNELS)) {
+							DHD_ERROR(("Too many nchan %d\n",
+								batch_params.nchan));
+							err = BCME_BUFTOOSHORT;
+							goto exit;
+						}
 						batch_params.chan_list[i++] =
-						simple_strtol(token2, NULL, 0);
+							simple_strtol(token2, NULL, 0);
 						batch_params.nchan++;
 						DHD_PNO(("channel :%d\n",
-						batch_params.chan_list[i-1]));
+							batch_params.chan_list[i-1]));
 					}
 				 }
 			} else if (!strncmp(param, PNO_PARAM_RTT, strlen(PNO_PARAM_RTT))) {
@@ -3075,7 +3089,13 @@ int wl_android_set_ibss_routetable(struct net_device *dev, char *command, int to
 		err = -EINVAL;
 		goto exit;
 	}
-	WL_INFO(("Routing table count:%d\n", entries));
+        if (entries > MAX_IBSS_ROUTE_TBL_ENTRY) {
+                WL_ERR(("Invalid entries number %u\n", entries));
+                err = -EINVAL;
+                goto exit;
+        }
+
+        WL_INFO(("Routing table count:%u\n", entries));
 	route_tbl->num_entry = entries;
 
 	for (i = 0; i < entries; i++) {
@@ -3259,12 +3279,13 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 
 	net_os_wake_lock(net);
 
-	if (!ifr->ifr_data) {
-		ret = -EINVAL;
-		goto exit;
-	}
 	if (!capable(CAP_NET_ADMIN)) {
 		ret = -EPERM;
+		goto exit;
+	}
+
+	if (!ifr->ifr_data) {
+		ret = -EINVAL;
 		goto exit;
 	}
 
