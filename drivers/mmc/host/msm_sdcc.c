@@ -6217,18 +6217,7 @@ msmsdcc_probe(struct platform_device *pdev)
 #ifndef CONFIG_MMC_MSM_SDC4_SUPPORT
 	if (t_flash_detect_dev == NULL && (host->pdev_id == 3)) {
 #else
-
-#if defined(CONFIG_MACH_JF_ATT) || defined(CONFIG_MACH_JF_TMO) || defined(CONFIG_MACH_JF_EUR) || \
-	defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-	if (t_flash_detect_dev == NULL &&
-		(((host->pdev_id == 4) && (system_rev < BOARD_REV08)) ||
-		((host->pdev_id == 2) && (system_rev >= BOARD_REV08)))) {
-#else /* VZW/SPT/USCC */
-	if (t_flash_detect_dev == NULL &&
-		(((host->pdev_id == 4) && (system_rev < BOARD_REV09)) ||
-		((host->pdev_id == 2) && (system_rev >= BOARD_REV09)))) {
-#endif
-
+	if (t_flash_detect_dev == NULL && gpio_is_valid(plat->status_gpio)) {
 #endif
 		printk(KERN_DEBUG "%s : Change sysfs Card Detect\n", __func__);
 
