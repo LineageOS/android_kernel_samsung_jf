@@ -175,7 +175,7 @@ static void sensor_power_on_vdd(int, int);
 #define MSM_ION_MFC_META_SIZE  0x40000 /* 256 Kbytes */
 #define MSM_CONTIG_MEM_SIZE  0x65000
 #ifdef CONFIG_MSM_IOMMU
-#define MSM_ION_MM_SIZE		0x6600000    /* 56MB(0x3800000) -> 98MB -> 102MB */
+#define MSM_ION_MM_SIZE		0x7200000    /* 56MB(0x3800000) -> 98MB -> 102MB -> 114MB */
 #define MSM_ION_SF_SIZE		0
 #define MSM_ION_QSECOM_SIZE	0x1700000    /* 7.5MB(0x780000) -> 23MB */
 #define MSM_ION_HEAP_NUM	8
@@ -1673,7 +1673,7 @@ out:
 
 static struct android_usb_platform_data android_usb_pdata = {
 	.update_pid_and_serial_num = usb_diag_update_pid_and_serial_num,
-	.cdrom = true,
+	.cdrom = false,
 	.nluns = 0,
 };
 
@@ -4522,7 +4522,7 @@ static struct gpio_keys_button gpio_keys_button[] = {
 		.desc           = "volume_up_key",
 		.active_low     = 1,
 		.type		= EV_KEY,
-		.wakeup		= 0,
+		.wakeup		= 1,
 #ifdef CONFIG_SEC_FACTORY
 		.debounce_interval = 10,
 #else
@@ -4535,7 +4535,7 @@ static struct gpio_keys_button gpio_keys_button[] = {
 		.desc           = "volume_down_key",
 		.active_low     = 1,
 		.type		= EV_KEY,
-		.wakeup		= 0,
+		.wakeup		= 1,
 #ifdef CONFIG_SEC_FACTORY
 		.debounce_interval = 10,
 #else
@@ -5316,9 +5316,6 @@ static void __init apq8064_common_init(void)
 		platform_device_register(&apq8064_device_ext_ts_sw_vreg);
 
 	platform_add_devices(common_devices, ARRAY_SIZE(common_devices));
-
-	if (!machine_is_apq8064_mtp())
-		platform_device_register(&apq8064_device_ext_ts_sw_vreg);
 
 	if (!(machine_is_mpq8064_cdp() || machine_is_mpq8064_hrd() ||
 			machine_is_mpq8064_dtv())) {
