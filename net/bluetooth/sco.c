@@ -405,6 +405,7 @@ static void __sco_sock_close(struct sock *sk)
 			sco_chan_del(sk, ECONNRESET);
 		break;
 
+	case BT_CONNECT2:
 	case BT_CONNECT:
 	case BT_DISCONN:
 		sco_chan_del(sk, ECONNRESET);
@@ -497,9 +498,6 @@ static int sco_sock_bind(struct socket *sock, struct sockaddr *addr, int alen)
 	BT_DBG("sk %p %s", sk, batostr(&sa.sco_bdaddr));
 
 	if (!addr || addr->sa_family != AF_BLUETOOTH)
-		return -EINVAL;
-
-	if (alen < sizeof(struct sockaddr_sco))
 		return -EINVAL;
 
 	memset(&sa, 0, sizeof(sa));
