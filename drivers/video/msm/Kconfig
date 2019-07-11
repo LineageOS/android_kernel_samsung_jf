@@ -40,12 +40,6 @@ config FB_MSM_MDP_HW
 	bool
 	default n
 
-config USE_VFB
-	bool "MSM Virtual Framebuffer support"
-	default n
-	---help---
-	  Support for MSM Virtual Framebuffer
-
 config MDP_DEBUG_FS
 	depends on DEBUG_FS
 	bool "MDP Debug FS"

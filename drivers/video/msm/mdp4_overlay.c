@@ -4474,13 +4474,6 @@ done:
 	return err;
 }
 
-#ifdef CONFIG_USE_VFB
-struct ion_client *mdp4_get_ion_client(void)
-{
-	return display_iclient;
-}
-#endif
-
 int mdp4_overlay_reset()
 {
 #if 0
