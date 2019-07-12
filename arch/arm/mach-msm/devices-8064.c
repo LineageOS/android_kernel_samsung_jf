@@ -2927,6 +2927,7 @@ static uint16_t msm_mpm_irqs_m2a[MSM_MPM_NR_MPM_IRQS] __initdata = {
 };
 
 static uint16_t msm_mpm_bypassed_apps_irqs[] __initdata = {
+	PM8821_SEC_IRQ_N,
 	TLMM_MSM_SUMMARY_IRQ,
 	RPM_APCC_CPU0_GP_HIGH_IRQ,
 	RPM_APCC_CPU0_GP_MEDIUM_IRQ,
@@ -2951,11 +2952,12 @@ static uint16_t msm_mpm_bypassed_apps_irqs[] __initdata = {
 	LPASS_SCSS_GP_HIGH_IRQ,
 	SPS_MTI_30,
 	SPS_MTI_31,
+	MSM8960_GSBI2_UARTDM_IRQ,
 	RIVA_APSS_SPARE_IRQ,
 	RIVA_APPS_WLAN_SMSM_IRQ,
 	RIVA_APPS_WLAN_RX_DATA_AVAIL_IRQ,
 	RIVA_APPS_WLAN_DATA_XFER_DONE_IRQ,
-	PM8821_SEC_IRQ_N,
+	USB_HSIC_IRQ,
 };
 
 struct msm_mpm_device_data apq8064_mpm_dev_data __initdata = {
