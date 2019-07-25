@@ -25,11 +25,6 @@
 #ifdef _CYPRESS_TKEY_FW_H
 #include "fusion3_cdma_tkey_fw.h"
 #endif
-#elif defined(CONFIG_SEC_PRODUCT_8960)
-#define BIN_FW_VERSION		0x06
-#ifdef _CYPRESS_TKEY_FW_H
-#include "d2_tkey_fw.h"
-#endif
 #else
 #define BIN_FW_VERSION		0x12
 #define BASE_FW_VERSION		0x01
