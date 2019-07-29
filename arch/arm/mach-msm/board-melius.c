@@ -190,14 +190,6 @@ static struct platform_device msm_fm_platform_init = {
 	.id   = -1,
 };
 
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
-
-#ifdef CONFIG_PROC_AVC
-#include <linux/proc_avc.h>
-#endif
-
 #ifdef CONFIG_KS8851
 #define KS8851_RST_GPIO		89
 #define KS8851_IRQ_GPIO		90
@@ -3090,9 +3082,6 @@ static void __init msm8930_map_io(void)
 
 	if (socinfo_init() < 0)
 		pr_err("socinfo_init() failed!\n");
-#ifdef CONFIG_SEC_DEBUG
-	sec_getlog_supply_meminfo(0x40000000, 0x80000000, 0x00, 0x00);
-#endif
 }
 
 static void __init msm8930_init_irq(void)
@@ -5327,15 +5316,6 @@ extern void set_esd_gpio_config(void);
 
 void __init msm8930_melius_init(void)
 {
-
-#ifdef CONFIG_SEC_DEBUG
-	sec_debug_init();
-#endif
-
-#ifdef CONFIG_PROC_AVC
-	sec_avc_log_init();
-#endif
-
 	if (socinfo_get_pmic_model() == PMIC_MODEL_PM8917)
 		msm8930_pm8917_pdata_fixup();
 	if (meminfo_init(SYS_MEMORY, SZ_256M) < 0)

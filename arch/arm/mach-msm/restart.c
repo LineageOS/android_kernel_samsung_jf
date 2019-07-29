@@ -30,11 +30,6 @@
 #include <mach/msm_iomap.h>
 #include <mach/restart.h>
 #include <mach/socinfo.h>
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#include <linux/notifier.h>
-#include <linux/ftrace.h>
-#endif
 #include <mach/irqs.h>
 #include <mach/scm.h>
 #include "msm_watchdog.h"
@@ -64,11 +59,7 @@ static int ssr_magic_number = 0;
 #endif
 
 static int restart_mode;
-#ifndef CONFIG_SEC_DEBUG
 void *restart_reason;
-#endif
-int kernel_sec_get_debug_level(void);
-#define KERNEL_SEC_DEBUG_LEVEL_LOW      (0x574F4C44)
 int pmic_reset_irq;
 static void __iomem *msm_tmr0_base;
 
@@ -104,19 +95,8 @@ static void set_dload_mode(int on)
 				lge_error_handler_cookie_addr);
 #endif
 		mb();
-#ifdef CONFIG_SEC_DEBUG
-		pr_err("set_dload_mode <%d> ( %x )\n", on,
-					(unsigned int) CALLER_ADDR0);
-#endif
 	}
 }
-#ifdef CONFIG_SEC_DEBUG
-void sec_debug_set_qc_dload_magic(int on)
-{
-	pr_info("%s: on=%d\n", __func__, on);
-	set_dload_mode(on);
-}
-#endif
 
 static int dload_set(const char *val, struct kernel_param *kp)
 {
@@ -259,7 +239,6 @@ void msm_restart(char mode, const char *cmd)
 {
 	unsigned long value;
 
-#ifndef CONFIG_SEC_DEBUG
 #ifdef CONFIG_MSM_DLOAD_MODE
 
 	/* This looks like a normal reboot at this point. */
@@ -281,32 +260,17 @@ void msm_restart(char mode, const char *cmd)
 	if (!download_mode)
 		set_dload_mode(0);
 #endif
-#endif
 
-#ifdef CONFIG_SEC_DEBUG_LOW_LOG
 #ifdef CONFIG_MSM_DLOAD_MODE
-#ifdef CONFIG_SEC_DEBUG
-	if (sec_debug_is_enabled()
-	&& ((restart_mode == RESTART_DLOAD) || in_panic))
-		set_dload_mode(1);
-	else
-		set_dload_mode(0);
-#else
 	set_dload_mode(0);
 	set_dload_mode(in_panic);
 	if (restart_mode == RESTART_DLOAD)
 		set_dload_mode(1);
 #endif
-#endif
-#endif
+
 	printk(KERN_NOTICE "Going down for restart now\n");
 
 	pm8xxx_reset_pwr_off(1);
-#ifdef CONFIG_SEC_DEBUG
-	if (!restart_reason)
-		restart_reason = ioremap_nocache((unsigned long)(MSM_IMEM_BASE \
-						+ RESTART_REASON_ADDR), SZ_4K);
-#endif
 
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "bootloader", 10)) {
@@ -317,10 +281,6 @@ void msm_restart(char mode, const char *cmd)
 			unsigned long code;
 			code = simple_strtoul(cmd + 4, NULL, 16) & 0xff;
 			__raw_writel(0x6f656d00 | code, restart_reason);
-#ifdef CONFIG_SEC_DEBUG
-		} else if (!strncmp(cmd, "sec_debug_hw_reset", 18)) {
-			__raw_writel(0x776655ee, restart_reason);
-#endif
 		} else if (!strncmp(cmd, "download", 8)) {
 			__raw_writel(0x12345671, restart_reason);
 		} else if (!strncmp(cmd, "sud", 3)) {
@@ -329,11 +289,6 @@ void msm_restart(char mode, const char *cmd)
 		} else if (!strncmp(cmd, "debug", 5)
 				&& !kstrtoul(cmd + 5, 0, &value)) {
 			__raw_writel(0xabcd0000 | value, restart_reason);
-#ifdef CONFIG_SEC_SSR_DEBUG_LEVEL_CHK
-		} else if (!strncmp(cmd, "cpdebug", 7) /* set cp debug level */
-				&& !kstrtoul(cmd + 7, 0, &value)) {
-			__raw_writel(0xfedc0000 | value, restart_reason);
-#endif
 		} else if (strlen(cmd) == 0) {
 			printk(KERN_NOTICE "%s : value of cmd is NULL.\n", __func__);
 			__raw_writel(0x12345678, restart_reason);
@@ -366,23 +321,11 @@ reset:
 	mdelay(10000);
 	printk(KERN_ERR "Restarting has failed\n");
 }
-#ifdef CONFIG_SEC_DEBUG
-static int dload_mode_normal_reboot_handler(struct notifier_block *nb,
-				unsigned long l, void *p)
-{
-	set_dload_mode(0);
-	return 0;
-}
-
-static struct notifier_block dload_reboot_block = {
-	.notifier_call = dload_mode_normal_reboot_handler
-};
-#endif
 
 #ifdef CONFIG_KEXEC_HARDBOOT
 void msm_kexec_hardboot(void)
 {
-#if defined(CONFIG_MSM_DLOAD_MODE) && !defined(CONFIG_SEC_DEBUG)
+#if defined(CONFIG_MSM_DLOAD_MODE)
 	/* Do not enter download mode on reboot. */
 	set_dload_mode(0);
 #endif
@@ -402,9 +345,6 @@ static int __init msm_pmic_restart_init(void)
 
 #if defined(CONFIG_MACH_JF_VZW) || defined(CONFIG_MACH_MELIUS)
 	return 0;
-#elif defined(CONFIG_SEC_DEBUG)
-	if (kernel_sec_get_debug_level() != KERNEL_SEC_DEBUG_LEVEL_LOW)
-		return 0;
 #endif
 
 	if (pmic_reset_irq != 0) {
@@ -435,20 +375,10 @@ static int __init msm_restart_init(void)
 	lge_error_handler_cookie_addr = MSM_IMEM_BASE +
 		LGE_ERROR_HANDLER_MAGIC_ADDR;
 #endif
-#ifdef CONFIG_SEC_DEBUG
-	register_reboot_notifier(&dload_reboot_block);
-#endif
-#ifdef CONFIG_SEC_DEBUG_LOW_LOG
-	if (!sec_debug_is_enabled()) {
-		set_dload_mode(0);
-	} else
-#endif
 	set_dload_mode(download_mode);
 #endif
 	msm_tmr0_base = msm_timer_get_timer0_base();
-#ifndef CONFIG_SEC_DEBUG
 	restart_reason = MSM_IMEM_BASE + RESTART_REASON_ADDR;
-#endif
 	pm_power_off = msm_power_off;
 #ifdef CONFIG_KEXEC_HARDBOOT
 	kexec_hardboot_hook = msm_kexec_hardboot;

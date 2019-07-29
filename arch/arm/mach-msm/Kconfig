@@ -2727,13 +2727,6 @@ config MSM_L2_ERP_2BIT_PANIC
 	  For production builds, it may be acceptable to say 'N' here, since
 	  an uncorrectable error might not necessarily cause further problems.
 
-config SEC_SSR_DEBUG_LEVEL_CHK
-	bool "SSR DEBUG LEVEL check"
-	help
-	  To check the level of debug for SSR.
-
-
-
 config MSM_DCVS
 	bool "Use MSM DCVS for CPU/GPU Frequency control"
 	depends on MSM_SCM

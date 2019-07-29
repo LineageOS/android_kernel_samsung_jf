@@ -40,19 +40,10 @@
 #include "acpuclock.h"
 #include "acpuclock-krait.h"
 #include "avs.h"
-#ifdef CONFIG_SEC_DEBUG_DCVS_LOG
-#include <mach/sec_debug.h>
-#endif
 /* MUX source selects. */
 #define PRI_SRC_SEL_SEC_SRC	0
 #define PRI_SRC_SEL_HFPLL	1
 #define PRI_SRC_SEL_HFPLL_DIV2	2
-
-#ifdef CONFIG_SEC_DEBUG_SUBSYS
-int boost_uv;
-int speed_bin;
-int pvs_bin;
-#endif
 
 static DEFINE_MUTEX(driver_lock);
 static DEFINE_SPINLOCK(l2_lock);
@@ -555,9 +546,6 @@ static int acpuclk_krait_set_rate(int cpu, unsigned long rate,
 	 */
 	skip_regulators = (reason == SETRATE_PC);
 
-#ifdef CONFIG_SEC_DEBUG_DCVS_LOG
-	sec_debug_dcvs_log(cpu, strt_acpu_s->khz, tgt_acpu_s->khz);
-#endif
 	/* Set the new CPU speed. */
 	set_speed(&drv.scalable[cpu], tgt_acpu_s, skip_regulators);
 
@@ -1135,11 +1123,6 @@ static struct pvs_table * __init select_freq_plan(
 			 drv.pvs_bin);
 	}
 
-#ifdef CONFIG_SEC_DEBUG_SUBSYS
-	speed_bin = drv.speed_bin;
-	pvs_bin = drv.pvs_bin;
-#endif
-
 	return &params->pvs_tables[drv.speed_bin][drv.pvs_bin];
 }
 
@@ -1175,9 +1158,6 @@ static void __init drv_data_init(struct device *dev,
 	drv.acpu_freq_tbl = kmemdup(pvs->table, pvs->size, GFP_KERNEL);
 	BUG_ON(!drv.acpu_freq_tbl);
 	drv.boost_uv = pvs->boost_uv;
-#ifdef CONFIG_SEC_DEBUG_SUBSYS
-	boost_uv = drv.boost_uv;
-#endif
 	acpuclk_krait_data.power_collapse_khz = params->stby_khz;
 	acpuclk_krait_data.wait_for_irq_khz = params->stby_khz;
 }

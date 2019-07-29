@@ -111,9 +111,6 @@
 #include "smd_private.h"
 #include "sysmon.h"
 
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 #if defined(CONFIG_VIDEO_MHL_V2)
 #include <linux/sii8240.h>
 #endif
@@ -137,10 +134,6 @@
 
 #ifdef CONFIG_LEDS_MAX77693
 #include <linux/leds-max77693.h>
-#endif
-
-#ifdef CONFIG_PROC_AVC
-#include <linux/proc_avc.h>
 #endif
 
 #ifdef CONFIG_SEC_THERMISTOR
@@ -3425,9 +3418,6 @@ static void __init apq8064_map_io(void)
 	msm_map_apq8064_io();
 	if (socinfo_init() < 0)
 		pr_err("socinfo_init() failed!\n");
-#ifdef CONFIG_SEC_DEBUG
-	sec_getlog_supply_meminfo(0x40000000, 0x80000000, 0x00, 0x00);
-#endif
 }
 
 static void __init apq8064_init_irq(void)
@@ -5686,12 +5676,6 @@ static void __init apq8064_gpio_keys_init(void)
 
 static void __init samsung_jf_init(void)
 {
-#ifdef CONFIG_SEC_DEBUG
-	sec_debug_init();
-#endif
-#ifdef CONFIG_PROC_AVC
-	sec_avc_log_init();
-#endif
 	if (meminfo_init(SYS_MEMORY, SZ_256M) < 0)
 		pr_err("meminfo_init() failed!\n");
 	/*

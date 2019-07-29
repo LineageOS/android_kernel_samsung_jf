@@ -60,16 +60,9 @@
 #include "pm-boot.h"
 #include <mach/event_timer.h>
 #include <linux/cpu_pm.h>
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 #include <linux/regulator/consumer.h>
 #include <mach/gpiomux.h>
 #include <linux/mfd/pm8xxx/pm8921.h>
-
-#ifdef CONFIG_SEC_GPIO_DVS
-#include <linux/secgpio_dvs.h>
-#endif
 
 #define SCM_L2_RETENTION	(0x2)
 #define SCM_CMD_TERMINATE_PC	(0x2)
@@ -520,13 +513,7 @@ static bool __ref msm_pm_spm_power_collapse(
 #ifdef CONFIG_VFP
 	vfp_pm_suspend();
 #endif
-#ifdef CONFIG_SEC_DEBUG
-	secdbg_sched_msg("+pc(I:%d,R:%d)", from_idle, notify_rpm);
-#endif
 	collapsed = save_cpu_regs ? msm_pm_collapse() : msm_pm_pc_hotplug();
-#ifdef CONFIG_SEC_DEBUG
-	secdbg_sched_msg("-pc(%d)", collapsed);
-#endif
 
 	if (from_idle && msm_pm_pc_reset_timer)
 		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &cpu);
@@ -1157,38 +1144,6 @@ enter_exit:
 	return 0;
 }
 
-enum {
-	MSM_PM_SECDEBUG_LEVLE1 = BIT(0),
-};
-
-static int msm_pm_secdebug_mask;
-module_param_named(
-	secdebug, msm_pm_secdebug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP
-);
-
-static int msm_pm_prepare_late(void)
-{
-	if (msm_pm_secdebug_mask & MSM_PM_SECDEBUG_LEVLE1) {
-		regulator_showall_enabled();
-		msm_gpio_print_enabled();
-		pm_gpio_dbg_showall(1);
-		pm_mpp_dbg_showall(1);
-	} else {
-		pm_gpio_dbg_showall(0);
-		pm_mpp_dbg_showall(0);
-	}
-
-#ifdef CONFIG_SEC_GPIO_DVS
-	/************************ Caution !!! ****************************/
-	/* This function must be located in appropriate SLEEP position
-	 * in accordance with the specification of each BB vendor.
-	 */
-	/************************ Caution !!! ****************************/
-	gpio_dvs_check_sleepgpio();
-#endif
-	return 0;
-}
-
 /******************************************************************************
  * Initialization routine
  *****************************************************************************/
@@ -1340,7 +1295,6 @@ static int __init msm_pm_setup_saved_state(void)
 arch_initcall(msm_pm_setup_saved_state);
 
 static const struct platform_suspend_ops msm_pm_ops = {
-	.prepare_late = msm_pm_prepare_late,
 	.enter = msm_pm_enter,
 	.valid = suspend_valid_only_mem,
 };

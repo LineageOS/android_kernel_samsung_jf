@@ -22,9 +22,6 @@
 
 #include <linux/mfd/pm8xxx/core.h>
 #include <linux/input/pmic8xxx-pwrkey.h>
-#ifdef CONFIG_SEC_DEBUG
-#include <mach/sec_debug.h>
-#endif
 #include <linux/string.h>
 #include <linux/delay.h>
 
@@ -59,9 +56,6 @@ static irqreturn_t pwrkey_press_irq(int irq, void *_pwrkey)
 	pwrkey->powerkey_state = 1;
 	input_report_key(pwrkey->pwr, KEY_POWER, 1);
 	input_sync(pwrkey->pwr);
-#ifdef CONFIG_SEC_DEBUG
-	sec_debug_check_crash_key(KEY_POWER, 1);
-#endif
 	return IRQ_HANDLED;
 }
 
@@ -80,12 +74,9 @@ static irqreturn_t pwrkey_release_irq(int irq, void *_pwrkey)
 	pwrkey->powerkey_state = 0;
 	input_report_key(pwrkey->pwr, KEY_POWER, 0);
 	input_sync(pwrkey->pwr);
-#ifdef CONFIG_SEC_DEBUG
-	sec_debug_check_crash_key(KEY_POWER, 0);
-#endif
 	return IRQ_HANDLED;
 }
-	
+
 #ifdef CONFIG_PM_SLEEP
 static int pmic8xxx_pwrkey_suspend(struct device *dev)
 {

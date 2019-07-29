@@ -75,7 +75,6 @@ obj-$(CONFIG_QFP_FUSE) += qfp_fuse.o
 obj-$(CONFIG_QSEECOM)  += tzic.o
 obj-y += tspdrv/
 obj-$(CONFIG_BCM2079X_NFC_I2C)	+= bcm2079x-i2c.o
-obj-$(CONFIG_SEC_MISC)		+= sec_param.o sec_misc.o
 ifdef CONFIG_MACH_MELIUS
 obj-$(CONFIG_MFD_MAX77693)      += max77693-muic_melius.o
 endif

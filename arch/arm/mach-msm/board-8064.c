@@ -3271,10 +3271,6 @@ static void __init apq8064_common_init(void)
 	u32 platform_version = socinfo_get_platform_version();
 	struct msm_rpmrs_level rpmrs_level;
 
-#ifdef CONFIG_PROC_AVC
-	sec_avc_log_init();
-#endif
-
 	if (socinfo_get_pmic_model() == PMIC_MODEL_PM8917)
 		apq8064_pm8917_pdata_fixup();
 	platform_device_register(&msm_gpio_device);
