@@ -780,8 +780,12 @@ static uint32_t smd_ch_edge[] = {
 	SMD_APPS_QDSP,
 	SMD_APPS_MODEM,
 	SMD_APPS_QDSP,
+#ifdef CONFIG_MSM_PIL_RIVA
 	SMD_APPS_WCNSS,
+#endif
+#ifdef CONFIG_MSM_PIL_GSS
 	SMD_APPS_MODEM,
+#endif
 };
 #endif
 module_param_named(loopback_edge, smd_ch_edge[LOOPBACK_INX],
