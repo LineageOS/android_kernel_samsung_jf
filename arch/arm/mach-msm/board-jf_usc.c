@@ -5235,6 +5235,7 @@ static void __init apq8064ab_update_retention_spm(void)
 static void __init apq8064_common_init(void)
 {
 	u32 platform_version = socinfo_get_platform_version();
+	struct msm_rpmrs_level rpmrs_level;
 
 #ifdef CONFIG_KEYBOARD_CYPRESS_TOUCH_236
 	int ret;
