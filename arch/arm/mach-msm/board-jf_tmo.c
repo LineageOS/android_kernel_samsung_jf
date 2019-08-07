@@ -984,8 +984,23 @@ static void __init reserve_ion_memory(void)
 }
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
+static char bootreason[128] = {0,};
+int __init device_boot_reason(char *s)
+{
+	int n;
+
+	if (*s == '=')
+		s++;
+	n = snprintf(bootreason, sizeof(bootreason),
+		 "Boot info:\n"
+		 "Last boot reason: %s\n", s);
+	bootreason[n] = '\0';
+	return 1;
+}
+__setup("bootreason", device_boot_reason);
+
 static struct ram_console_platform_data ram_console_pdata = {
-	.bootinfo = NULL,
+	.bootinfo = bootreason,
 };
 
 static struct platform_device ram_console_device = {
