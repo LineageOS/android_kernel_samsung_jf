@@ -44,7 +44,7 @@
 #include <linux/param.h>
 #include <linux/bitops.h>
 #include <linux/termios.h>
-#include <linux/wakelock.h>
+#include <linux/pm.h>
 #include <mach/gpio.h>
 #include <linux/serial_core.h>
 #include <mach/msm_serial_hs.h>
@@ -85,7 +85,7 @@ struct bluesleep_info {
 	unsigned ext_wake;
 	unsigned host_wake_irq;
 	struct uart_port *uport;
-	struct wake_lock wake_lock;
+	struct wakeup_source bluesleep_wakeup_source;
 	int irq_polarity;
 	int has_ext_wake;
 };
@@ -226,7 +226,7 @@ void bluesleep_sleep_wakeup(void)
 		BT_DBG("waking up...");
 		/*Activating UART */
 		hsuart_power(1);
-		wake_lock(&bsi->wake_lock);
+		__pm_stay_awake(&bsi->bluesleep_wakeup_source);
 		/* Start the timer */
 		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
 		if (bsi->has_ext_wake == 1) {
@@ -255,7 +255,7 @@ static void bluesleep_sleep_wakeup_wq(struct work_struct *work)
 	if (test_bit(BT_ASLEEP, &flags)) {
 		BT_DBG("(wq)waking up...");
 
-		wake_lock(&bsi->wake_lock);
+		__pm_stay_awake(&bsi->bluesleep_wakeup_source);
 		/* Start the timer */
 		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
 		if (bsi->has_ext_wake == 1) {
@@ -296,7 +296,8 @@ static void bluesleep_sleep_work(struct work_struct *work)
 			/* UART clk is not turned off immediately. Release
 			 * wakelock after 500 ms.
 			 */
-			wake_lock_timeout(&bsi->wake_lock, HZ / 2);
+			__pm_wakeup_event(
+				&bsi->bluesleep_wakeup_source, msecs_to_jiffies(500));
 		} else {
 			mod_timer(&tx_timer, jiffies + TX_TIMER_INTERVAL * HZ);
 			return;
@@ -487,7 +488,7 @@ static void bluesleep_start_wq(struct work_struct *work)
 	}
 #endif
 	set_bit(BT_PROTO, &flags);
-	wake_lock(&bsi->wake_lock);
+	__pm_stay_awake(&bsi->bluesleep_wakeup_source);
 	return;
 fail:
 	del_timer(&tx_timer);
@@ -529,7 +530,8 @@ static void bluesleep_stop_wq(struct work_struct *work)
 	if (disable_irq_wake(bsi->host_wake_irq))
 		BT_ERR("Couldn't disable hostwake IRQ wakeup mode\n");
 #endif
-	wake_lock_timeout(&bsi->wake_lock, HZ / 2);
+	__pm_wakeup_event(
+		&bsi->bluesleep_wakeup_source, msecs_to_jiffies(500));
 
 	bsi->uport = NULL;
 }
@@ -564,7 +566,8 @@ static void bluesleep_abnormal_stop_wq(struct work_struct *work)
 	if (disable_irq_wake(bsi->host_wake_irq))
 		BT_ERR("Couldn't disable hostwake IRQ wakeup mode\n");
 #endif
-	wake_lock_timeout(&bsi->wake_lock, HZ / 2);
+	__pm_wakeup_event(
+		&bsi->bluesleep_wakeup_source, msecs_to_jiffies(500));
 
 	bsi->uport = NULL;
 }
@@ -654,7 +657,7 @@ static int bluesleep_probe(struct platform_device *pdev)
 	else
 		bsi->irq_polarity = POLARITY_HIGH;/*anything else*/
 
-	wake_lock_init(&bsi->wake_lock, WAKE_LOCK_SUSPEND, "bluesleep");
+	wakeup_source_init(&bsi->bluesleep_wakeup_source, "bluesleep");
 	clear_bit(BT_SUSPEND, &flags);
 
 	if (bsi->irq_polarity == POLARITY_LOW) {
@@ -687,7 +690,7 @@ static int bluesleep_remove(struct platform_device *pdev)
 	free_irq(bsi->host_wake_irq, NULL);
 	gpio_free(bsi->host_wake);
 	//gpio_free(bsi->ext_wake);
-	wake_lock_destroy(&bsi->wake_lock);
+	wakeup_source_trash(&bsi->bluesleep_wakeup_source);
 	kfree(bsi);
 	return 0;
 }
