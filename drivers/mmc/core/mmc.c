@@ -495,6 +495,13 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 	}
 
 	if (card->ext_csd.rev >= 5) {
+		/* enable packed configuration for Toshiba eMMC */
+		if (card->cid.manfid == 0x11) {
+			pr_info("Enabling Packed WR for the Toshiba eMMC\n");
+			card->host->caps2 |= MMC_CAP2_PACKED_WR;
+			card->host->caps2 |= MMC_CAP2_PACKED_WR_CONTROL;
+		}
+
 		/* check whether the eMMC card supports BKOPS */
 		if (ext_csd[EXT_CSD_BKOPS_SUPPORT] & 0x1) {
 			card->ext_csd.bkops = 1;
@@ -699,7 +706,7 @@ MMC_DEV_ATTR(erase_type, "MMC_CAP_ERASE %s, type %s, SECURE %s, Sanitize %s\n",
 			card->host->caps & MMC_CAP_ERASE ? "enabled" : "disabled",
 			mmc_can_discard(card) ? "DISCARD" :
 			(mmc_can_trim(card) ? "TRIM" : "NORMAL"),
-			mmc_can_secure_erase_trim(card) ?    // 이 부분의 조건을 확인해주세요.
+			mmc_can_secure_erase_trim(card) ?
 			"supportable" : "disabled",
 			mmc_can_sanitize(card) ? "enabled" : "disabled");
 
@@ -1609,9 +1616,21 @@ static int mmc_suspend(struct mmc_host *host)
 	if (mmc_can_poweroff_notify(host->card))
 		err = mmc_poweroff_notify(host->card, EXT_CSD_POWER_OFF_SHORT);
 	else if (mmc_card_can_sleep(host))
+	{
+		if ((!strcmp(mmc_hostname(host), "mmc0")) && (host->card->cid.manfid == 0x45))
+			mmc_switch(host->card, EXT_CSD_CMD_SET_NORMAL,
+				EXT_CSD_BUS_WIDTH, EXT_CSD_BUS_WIDTH_1, 0);
+
 		err = mmc_card_sleep(host);
+	}
 	else if (!mmc_host_is_spi(host))
+	{
+		if ((!strcmp(mmc_hostname(host), "mmc0")) && (host->card->cid.manfid == 0x45))
+			mmc_switch(host->card, EXT_CSD_CMD_SET_NORMAL,
+				EXT_CSD_BUS_WIDTH, EXT_CSD_BUS_WIDTH_1, 0);
 		mmc_deselect_cards(host);
+	}
+
 	host->card->state &= ~(MMC_STATE_HIGHSPEED | MMC_STATE_HIGHSPEED_200);
 
 out:

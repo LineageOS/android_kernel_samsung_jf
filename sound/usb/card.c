@@ -544,7 +544,9 @@ snd_usb_audio_probe(struct usb_device *dev,
 		goto __error;
 	}
 
+#ifndef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
 	switch_set_state(usbaudiosdev, 1);
+#endif
 	usb_chip[chip->index] = chip;
 	chip->num_interfaces++;
 	chip->probing = 0;

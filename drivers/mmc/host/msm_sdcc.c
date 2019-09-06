@@ -6214,11 +6214,7 @@ msmsdcc_probe(struct platform_device *pdev)
 		       mmc_hostname(mmc));
 
 /* SYSFS about SD Card Detection by soonil.lim */
-#ifndef CONFIG_MMC_MSM_SDC4_SUPPORT
-	if (t_flash_detect_dev == NULL && (host->pdev_id == 3)) {
-#else
 	if (t_flash_detect_dev == NULL && gpio_is_valid(plat->status_gpio)) {
-#endif
 		printk(KERN_DEBUG "%s : Change sysfs Card Detect\n", __func__);
 
 		t_flash_detect_dev = device_create(sec_class,
@@ -6772,18 +6768,22 @@ msmsdcc_runtime_resume(struct device *dev)
 	if (host->plat->is_sdio_al_client)
 		goto out;
 
+#if defined(CONFIG_BCM4335) || defined(CONFIG_BCM4335_MODULE)
 	if (host->pdev_id == 3) {
 		printk(KERN_INFO "%s: Enter WIFI resume\n", __func__);
 	}
+#endif
 
 	pr_debug("%s: %s: start\n", mmc_hostname(mmc), __func__);
 	if (mmc) {
 		if (mmc->card && mmc_card_sdio(mmc->card) &&
 				mmc_card_keep_power(mmc)) {
 			msmsdcc_ungate_clock(host);
+#if defined(CONFIG_BCM4335) || defined(CONFIG_BCM4335_MODULE)
 			if (host->pdev_id == 3) {
 				printk(KERN_INFO "%s: To check whether skip the WIFI resume in mmc_card_keep_power\n", __func__);
 			}
+#endif
 		}
 
 		mmc_resume_host(mmc);
