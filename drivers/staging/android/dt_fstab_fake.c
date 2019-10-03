@@ -87,6 +87,9 @@ DT_FILE_INIT(android_name, "android")
 DT_FILE_INIT(fstab_compatible, "android,fstab")
 DT_FILE_INIT(fstab_name, "fstab")
 
+static char systemblockdevice[50];
+DT_PARTITION_INIT(system, systemblockdevice, "wait", "ro", "ext4")
+
 static int __init dt_fstab_proc_init(void)
 {
 	// Setup basic hierarchy
@@ -99,11 +102,16 @@ static int __init dt_fstab_proc_init(void)
 	DT_FILE_CREATE(fstab_compatible, "device-tree/firmware/android/fstab/compatible")
 	DT_FILE_CREATE(fstab_name, "device-tree/firmware/android/fstab/name")
 
+	strcpy(systemblockdevice, "/dev/block/platform/msm_sdcc.1/by-name/system");
+	DT_PARTITION_CREATE(system)
+
 	return 0;
 }
 
 static void __exit dt_fstab_proc_exit(void)
 {
+	DT_PARTITION_REMOVE(system)
+
 	// Cleanup basic hierarchy
 	DT_REMOVE("device-tree/firmware/android/compatible")
 	DT_REMOVE("device-tree/firmware/android/name")
