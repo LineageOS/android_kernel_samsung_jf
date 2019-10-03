@@ -82,12 +82,19 @@ DT_REMOVE("device-tree/firmware/android/fstab/"#_name"/compatible") \
 DT_REMOVE("device-tree/firmware/android/fstab/"#_name)
 
 // Setup basic hierarchy
+DT_FILE_INIT(android_compatible, "android,firmware")
+DT_FILE_INIT(android_name, "android")
 DT_FILE_INIT(fstab_compatible, "android,fstab")
 DT_FILE_INIT(fstab_name, "fstab")
 
 static int __init dt_fstab_proc_init(void)
 {
 	// Setup basic hierarchy
+	DT_DIR_CREATE("device-tree")
+	DT_DIR_CREATE("device-tree/firmware")
+	DT_DIR_CREATE("device-tree/firmware/android")
+	DT_FILE_CREATE(android_compatible, "device-tree/firmware/android/compatible")
+	DT_FILE_CREATE(android_name, "device-tree/firmware/android/name")
 	DT_DIR_CREATE("device-tree/firmware/android/fstab")
 	DT_FILE_CREATE(fstab_compatible, "device-tree/firmware/android/fstab/compatible")
 	DT_FILE_CREATE(fstab_name, "device-tree/firmware/android/fstab/name")
@@ -98,6 +105,8 @@ static int __init dt_fstab_proc_init(void)
 static void __exit dt_fstab_proc_exit(void)
 {
 	// Cleanup basic hierarchy
+	DT_REMOVE("device-tree/firmware/android/compatible")
+	DT_REMOVE("device-tree/firmware/android/name")
 	DT_REMOVE("device-tree/firmware/android/fstab/name")
 	DT_REMOVE("device-tree/firmware/android/fstab/compatible")
 	DT_REMOVE("device-tree/firmware/android/fstab")
