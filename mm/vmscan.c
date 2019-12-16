@@ -19,6 +19,7 @@
 #include <linux/pagemap.h>
 #include <linux/init.h>
 #include <linux/highmem.h>
+#include <linux/vmpressure.h>
 #include <linux/vmstat.h>
 #include <linux/file.h>
 #include <linux/writeback.h>
@@ -1979,12 +1980,16 @@ restart:
 
 static void shrink_zone(struct zone *zone, struct scan_control *sc)
 {
+	unsigned long nr_reclaimed, nr_scanned;
 	struct mem_cgroup *root = sc->target_mem_cgroup;
 	struct mem_cgroup_reclaim_cookie reclaim = {
 		.zone = zone,
 		.priority = sc->priority,
 	};
 	struct mem_cgroup *memcg;
+
+	nr_reclaimed = sc->nr_reclaimed;
+	nr_scanned = sc->nr_scanned;
 
 	memcg = mem_cgroup_iter(root, NULL, &reclaim);
 	do {
@@ -2010,6 +2015,10 @@ static void shrink_zone(struct zone *zone, struct scan_control *sc)
 		}
 		memcg = mem_cgroup_iter(root, memcg, &reclaim);
 	} while (memcg);
+
+	vmpressure(sc->gfp_mask, sc->target_mem_cgroup,
+		   sc->nr_scanned - nr_scanned,
+		   sc->nr_reclaimed - nr_reclaimed);
 }
 
 /* Returns true if compaction should go ahead for a high-order request */
@@ -2188,6 +2197,7 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		count_vm_event(ALLOCSTALL);
 
 	do {
+		vmpressure_prio(sc->gfp_mask, sc->target_mem_cgroup, sc->priority);
 		sc->nr_scanned = 0;
 		aborted_reclaim = shrink_zones(zonelist, sc);
 
