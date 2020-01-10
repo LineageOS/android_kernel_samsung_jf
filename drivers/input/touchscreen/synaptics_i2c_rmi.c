@@ -3991,15 +3991,8 @@ static int synaptics_rmi4_resume(struct device *dev)
 
 	if (rmi4_data->input_dev->users) {
 		if (rmi4_data->touch_stopped) {
-#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
-			rmi4_data->board->hsync_onoff(false);
-#endif
 			rmi4_data->board->power(true);
 			rmi4_data->touch_stopped = false;
-			rmi4_data->current_page = MASK_8BIT;
-#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
-			rmi4_data->board->hsync_onoff(true);
-#endif
 
 			retval = synaptics_rmi4_reinit_device(rmi4_data);
 			if (retval < 0) {
@@ -4007,10 +4000,6 @@ static int synaptics_rmi4_resume(struct device *dev)
 						"%s: Failed to reinit device\n",
 						__func__);
 			}
-
-			if (rmi4_data->ta_status)
-				synaptics_charger_conn(rmi4_data, rmi4_data->ta_status);
-
 			enable_irq(rmi4_data->i2c_client->irq);
 
 			dev_dbg(&rmi4_data->i2c_client->dev, "%s -\n", __func__);
@@ -4019,13 +4008,6 @@ static int synaptics_rmi4_resume(struct device *dev)
 				__func__);
 		}
 	}
-
-#ifdef CONFIG_FB_MSM_MIPI_SAMSUNG_OCTA_VIDEO_FULL_HD_PT_PANEL
-	retval = rmi4_data->board->tout1_on();
-	if (retval)
-		dev_err(&rmi4_data->i2c_client->dev,
-				"%s: touch_tout1_on failed\n", __func__);
-#endif
 
 	mutex_unlock(&rmi4_data->input_dev->mutex);
 
