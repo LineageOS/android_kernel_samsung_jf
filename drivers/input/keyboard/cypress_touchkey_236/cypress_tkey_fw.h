@@ -9,27 +9,15 @@
  *
  */
 
-#if defined(CONFIG_BOARD_JF_REFRESH)
-#define BIN_FW_VERSION		0x1C
-#define BASE_FW_VERSION	0x01
-#define CYPRESS_MENU_BACK_MULTI_REPORT
-#define CYPRESS_RECENT_BACK_REPORT_FW_VER BIN_FW_VERSION
-#ifdef _CYPRESS_TKEY_FW_H
-#include "fusion3_jf_refresh_tkey_fw.h"
-#endif
-#elif defined(CONFIG_MACH_JF_VZW) || defined(CONFIG_MACH_JF_SPR) || defined(CONFIG_MACH_JF_USC) || defined(CONFIG_MACH_JF_CRI)
-#define BIN_FW_VERSION		0x1C
+#if defined(CONFIG_MACH_JF_VZW) || defined(CONFIG_MACH_JF_SPR) || defined(CONFIG_MACH_JF_USC) || defined(CONFIG_MACH_JF_CRI)
+#define BIN_FW_VERSION		0x1A
 #define BASE_FW_VERSION		0x01
-#define CYPRESS_MENU_BACK_MULTI_REPORT
-#define CYPRESS_RECENT_BACK_REPORT_FW_VER BIN_FW_VERSION
 #ifdef _CYPRESS_TKEY_FW_H
 #include "fusion3_cdma_tkey_fw.h"
 #endif
 #else
-#define BIN_FW_VERSION		0x12
+#define BIN_FW_VERSION		0x10
 #define BASE_FW_VERSION		0x01
-#define CYPRESS_MENU_BACK_MULTI_REPORT
-#define CYPRESS_RECENT_BACK_REPORT_FW_VER BIN_FW_VERSION
 #ifdef _CYPRESS_TKEY_FW_H
 #include "fusion3_tkey_fw.h"
 #endif

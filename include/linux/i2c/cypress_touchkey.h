@@ -97,11 +97,4 @@ void touchkey_charger_infom(bool en);
 #endif
 #endif
 
-#define CYPRESS_DETECTION_FLAG		0x1B
-
-#define TK_CMD_INTERRUPT_SET_REG	0x18
-#define TK_CMD_DUAL_DETECTION		0x01
-
-#define TK_BIT_DETECTION_CONFIRM	0xEE
-
 #endif /* __LINUX_CYPRESS_TOUCHKEY_H */

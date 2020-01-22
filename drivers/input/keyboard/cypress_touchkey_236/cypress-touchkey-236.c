@@ -108,7 +108,6 @@ struct cypress_touchkey_info {
 	u8			fw_ver;
 	void (*power_onoff)(int);
 	int			touchkey_update_status;
-	int	ic_fw_ver;
 	struct led_classdev			leds;
 	enum led_brightness			brightness;
 	struct mutex			touchkey_led_mutex;
@@ -321,61 +320,6 @@ static int i2c_touchkey_write(struct i2c_client *client,
 	}
 	return err;
 }
-
-#ifdef CYPRESS_MENU_BACK_MULTI_REPORT
-static void cypress_touchkey_interrupt_set_dual(struct i2c_client *client)
-{
-	struct cypress_touchkey_info *info = dev_get_drvdata(&client->dev);
-	int ret = 0;
-	int retry = 5;
-	u8 data[3] = {0, };
-
-	if (ic_fw_id & CYPRESS_65_IC_MASK) {
-		dev_err(&client->dev, "%s: This module support dual, %x\n", __func__, ic_fw_id);
-	} else {
-		dev_err(&client->dev, "%s: not support this this module. %x\n", __func__, ic_fw_id);
-		return;
-	}
-
-	if (info->ic_fw_ver < CYPRESS_RECENT_BACK_REPORT_FW_VER) {
-		dev_err(&client->dev, "%s: not support this version(%X/%X)\n", __func__, info->ic_fw_ver, CYPRESS_RECENT_BACK_REPORT_FW_VER);
-		return;
-	}
-
-	while (retry--) {
-		data[0] = TK_CMD_DUAL_DETECTION;
-		data[1] = 0x00;
-		data[2] = TK_BIT_DETECTION_CONFIRM;
-
-		ret = i2c_smbus_write_i2c_block_data(client, TK_CMD_INTERRUPT_SET_REG, 3, &data[0]);
-		if (ret < 0) {
-			dev_err(&client->dev, "%s: i2c write error. (%d)\n", __func__, ret);
-			msleep(30);
-			continue;
-		}
-		msleep(30);
-
-		data[0] = CYPRESS_DETECTION_FLAG;
-
-		ret = i2c_smbus_read_i2c_block_data(client, data[0], 1, &data[1]);
-		if (ret < 0) {
-			dev_err(&client->dev, "%s: i2c read error. (%d)\n", __func__, ret);
-			msleep(30);
-			continue;
-		}
-
-		if (data[1] != 1) {
-			dev_err(&client->dev,
-				"%s: interrupt set: 0x%X, failed.\n", __func__, data[1]);
-			continue;
-		}
-
-		dev_info(&client->dev, "%s: interrupt set: 0x%X\n", __func__, data[1]);
-		break;
-	}
-
-}
-#endif
 
 static void cypress_touchkey_led_work(struct work_struct *work)
 {
@@ -593,13 +537,6 @@ static void cypress_touchkey_glove_work(struct work_struct *work)
 		}
 
 	while (retry < 3) {
-
-		if (!(info->enabled)) {
-			printk(KERN_ERR "[TouchKey] %s %d Touchkey is not enabled.\n",
-				__func__, __LINE__);
-			return;
-		}
-
 		ret = i2c_touchkey_read(info->client, CYPRESS_GEN, data, 4);
 		if (ret < 0) {
 			dev_err(&info->client->dev, "[TouchKey] Failed to read Keycode_reg.\n");
@@ -615,23 +552,11 @@ static void cypress_touchkey_glove_work(struct work_struct *work)
 			data[3] = 0x40;
 		}
 
-		if (!(info->enabled)) {
-			printk(KERN_ERR "[TouchKey] %s %d Touchkey is not enabled.\n",
-				__func__, __LINE__);
-			return;
-		}
-
 		count = i2c_touchkey_write(info->client, data, 4);
 
 		msleep(50);
 
 		/* Check autocal status */
-		if (!(info->enabled)) {
-			printk(KERN_ERR "[TouchKey] %s %d Touchkey is not enabled.\n",
-				__func__, __LINE__);
-			return;
-		}
-
 		ret = i2c_touchkey_read(info->client, CYPRESS_GEN, data, 6);
 
 		if (glove_value == 1) {
@@ -693,8 +618,8 @@ void touchkey_flip_cover(int value)
 	if (!(info->enabled)) {
 		printk(KERN_ERR "[TouchKey] %s %d Touchkey is not enabled.\n",
 			__func__, __LINE__);
-		return;
-	}
+		return ;
+		}
 
 	if(ic_fw_id & CYPRESS_65_IC_MASK)
 		printk(KERN_INFO "[Touchkey] IC id 20065\n");
@@ -710,13 +635,6 @@ void touchkey_flip_cover(int value)
 		}
 
 	while (retry < 3) {
-
-		if (!(info->enabled)) {
-			printk(KERN_ERR "[TouchKey] %s %d Touchkey is not enabled.\n",
-				__func__, __LINE__);
-			return;
-		}
-
 		ret = i2c_touchkey_read(info->client, KEYCODE_REG, data, 4);
 		if (ret < 0) {
 			dev_err(&info->client->dev, "[Touchkey] Failed to read Keycode_reg %d times.\n",
@@ -733,24 +651,11 @@ void touchkey_flip_cover(int value)
 				data[3] = 0x40;
 		}
 
-		if (!(info->enabled)) {
-			printk(KERN_ERR "[TouchKey] %s %d Touchkey is not enabled.\n",
-				__func__, __LINE__);
-			return;
-		}
-
 		count = i2c_touchkey_write(info->client, data, 4);
 
 		msleep(100);
 
 		/* Check autocal status */
-
-		if (!(info->enabled)) {
-			printk(KERN_ERR "[TouchKey] %s %d Touchkey is not enabled.\n",
-				__func__, __LINE__);
-			return;
-		}
-
 		ret = i2c_touchkey_read(info->client, KEYCODE_REG, data, 6);
 
 		if (value == 1){
@@ -812,52 +717,22 @@ static irqreturn_t cypress_touchkey_interrupt(int irq, void *dev_id)
 		goto out;
 	}
 
-#ifdef CYPRESS_MENU_BACK_MULTI_REPORT
-	if (info->ic_fw_ver >= CYPRESS_RECENT_BACK_REPORT_FW_VER) {
-		int menu_data = buf[0] & 0x3;
-		int back_data = (buf[0] >> 2) & 0x3;
-		u8 menu_press = menu_data % 2;
-		u8 back_press = back_data % 2;
+	press = !(buf[0] & PRESS_BIT_MASK);
+	code = (int)(buf[0] & KEYCODE_BIT_MASK) - 1;
+	printk(KERN_ERR
+		"[TouchKey]press=%d, code=%d\n", press, code);
 
-		if (menu_data)
-			input_report_key(info->input_dev, info->keycode[0], menu_press);
-		if (back_data)
-			input_report_key(info->input_dev, info->keycode[1], back_press);
-
-		press = menu_press | back_press;
-
-#ifndef CONFIG_SAMSUNG_PRODUCT_SHIP
-		dev_info(&info->client->dev,
-				"%s: %s%s%X, ver: 0x%x\n", __func__,
-				menu_data ? (menu_press ? "menu P " : "menu R ") : "",
-				back_data ? (back_press ? "back P " : "back R ") : "",
-				buf[0], info->ic_fw_ver);
-#else
-		dev_info(&info->client->dev, "%s: key %s%s ver: 0x%x\n", __func__,
-				menu_data ? (menu_press ? "P" : "R") : "",
-				back_data ? (back_press ? "P" : "R") : "",
-				info->ic_fw_ver);
-#endif
-	} else
-#endif
-	{
-	        press = !(buf[0] & PRESS_BIT_MASK);
-	        code = (int)(buf[0] & KEYCODE_BIT_MASK) - 1;
-	        printk(KERN_ERR
-		        "[TouchKey]press=%d, code=%d\n", press, code);
-
-		if (code < 0) {
-			dev_err(&info->client->dev,
-					"not profer interrupt 0x%2X.\n", buf[0]);
-			goto out;
-		}
+	if (code < 0) {
+		dev_err(&info->client->dev,
+				"not profer interrupt 0x%2X.\n", buf[0]);
+		goto out;
+	}
 
 #if defined(SEC_TOUCHKEY_DEBUG)
-		TOUCHKEY_LOG(info->keycode[code], press);
+	TOUCHKEY_LOG(info->keycode[code], press);
 #endif
 
-	        input_report_key(info->input_dev, info->keycode[code], press);
-	}
+	input_report_key(info->input_dev, info->keycode[code], press);
 	input_sync(info->input_dev);
 
 out:
@@ -1066,11 +941,6 @@ static ssize_t touch_update_write(struct device *dev,
 	count = snprintf(buff, sizeof(buff), "0x%02x\n", data);
 	dev_info(&info->client->dev,
 		"[TouchKey] %s : FW Ver 0x%02x\n", __func__, data);
-
-#ifdef CYPRESS_MENU_BACK_MULTI_REPORT
-	/* CYPRESS Firmware setting interrupt type : dual or single interrupt */
-	cypress_touchkey_interrupt_set_dual(info->client);
-#endif
 
 	return count;
 }
@@ -1519,6 +1389,7 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 	int ret = 0;
 	int i;
 	int retry = NUM_OF_RETRY_UPDATE;
+	u32 ic_fw_ver;
 	u8 data[6] = { 0, };
 	struct device *sec_touchkey;
 
@@ -1658,13 +1529,13 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 	if (ret)
 		goto err_led_class_dev;
 
-	info->ic_fw_ver = data[1];
-	printk(KERN_INFO "[Touchkey] IC FW Version: 0x%02x\n", info->ic_fw_ver);
+	ic_fw_ver = data[1];
+	printk(KERN_INFO "[Touchkey] IC FW Version: 0x%02x\n", ic_fw_ver);
 
 	ic_fw_id = data[5];
 	printk(KERN_INFO "[Touchkey] IC ID Version: 0x%02x\n", ic_fw_id);
 
-	if ((ic_fw_id & CYPRESS_65_IC_MASK) && (info->ic_fw_ver >= BASE_FW_VERSION) && (info->ic_fw_ver < BIN_FW_VERSION)){
+	if ((ic_fw_id & CYPRESS_65_IC_MASK) && (ic_fw_ver >= BASE_FW_VERSION) && (ic_fw_ver < BIN_FW_VERSION)){
 		printk(KERN_INFO "[Touchkey] IC id 20065\n");
 		printk(KERN_INFO "[TouchKey] touchkey_update Start!!\n");
 		disable_irq(client->irq);
@@ -1672,12 +1543,6 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 		while (retry--) {
 			if (ISSP_main() == 0) {
 				dev_info(&client->dev, "[TouchKey] Update success!\n");
-
-#ifdef CYPRESS_MENU_BACK_MULTI_REPORT
-				/* CYPRESS Firmware setting interrupt type : dual or single interrupt */
-				cypress_touchkey_interrupt_set_dual(info->client);
-#endif
-
 				enable_irq(client->irq);
 				break;
 			}
@@ -1698,12 +1563,12 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 
 		msleep(500);
 
-		info->ic_fw_ver = i2c_smbus_read_byte_data(info->client,
+		ic_fw_ver = i2c_smbus_read_byte_data(info->client,
 				CYPRESS_FW_VER);
 		dev_info(&client->dev,
-			"[TouchKey] %s : FW Ver 0x%02x\n", __func__, info->ic_fw_ver);
+			"[TouchKey] %s : FW Ver 0x%02x\n", __func__, ic_fw_ver);
 		}
-	else if ((ic_fw_id & CYPRESS_55_IC_MASK) && (info->ic_fw_ver < BIN_FW_VERSION_20055)){
+	else if ((ic_fw_id & CYPRESS_55_IC_MASK) && (ic_fw_ver < BIN_FW_VERSION_20055)){
 		printk(KERN_INFO "[Touchkey] IC id 20055\n");
 		printk(KERN_INFO "[TouchKey] touchkey_update Start!!\n");
 		disable_irq(client->irq);
@@ -1731,22 +1596,14 @@ static int __devinit cypress_touchkey_probe(struct i2c_client *client,
 
 		msleep(500);
 
-		info->ic_fw_ver = i2c_smbus_read_byte_data(info->client,
+		ic_fw_ver = i2c_smbus_read_byte_data(info->client,
 				CYPRESS_FW_VER);
 		dev_info(&client->dev,
-			"[TouchKey] %s : FW Ver 0x%02x\n", __func__, info->ic_fw_ver);
+			"[TouchKey] %s : FW Ver 0x%02x\n", __func__, ic_fw_ver);
 
 	} else {
 		dev_info(&client->dev, "[TouchKey] FW update does not need!\n");
 	}
-
-#ifdef CYPRESS_MENU_BACK_MULTI_REPORT
-	/* CYPRESS Firmware setting interrupt type : dual or single interrupt */
-	if (info->ic_fw_ver >= CYPRESS_RECENT_BACK_REPORT_FW_VER)
-		msleep(60);
-
-	cypress_touchkey_interrupt_set_dual(info->client);
-#endif
 
 	cypress_touchkey_auto_cal(info);
 	sec_touchkey = device_create(sec_class, NULL, 0, NULL, "sec_touchkey");
@@ -2020,11 +1877,6 @@ static int cypress_touchkey_resume(struct device *dev)
 	if (info->pdata->gpio_led_en)
 		cypress_touchkey_con_hw(info, true);
 	msleep(100);
-
-#ifdef CYPRESS_MENU_BACK_MULTI_REPORT
-	/* CYPRESS Firmware setting interrupt type : dual or single interrupt */
-	cypress_touchkey_interrupt_set_dual(info->client);
-#endif
 
 	if (touchled_cmd_reversed) {
 			touchled_cmd_reversed = 0;
