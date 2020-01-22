@@ -1932,11 +1932,6 @@ static ssize_t cmd_store(struct device *dev, struct device_attribute *attr,
 	struct factory_data *data = f54->factory_data;
 	struct synaptics_rmi4_data *rmi4_data = f54->rmi4_data;
 
-	if (strlen(buf) >= CMD_STR_LEN) {
-		dev_err(&rmi4_data->i2c_client->dev, "%s: cmd length is over (%s,%d)!!\n", __func__, buf, (int)strlen(buf));
-		return -EINVAL;
-	}
-
 	if (data->cmd_is_running == true) {
 		dev_err(&rmi4_data->i2c_client->dev, "%s: Still servicing previous command. Skip cmd :%s\n",
 			 __func__, buf);
@@ -1998,7 +1993,7 @@ static ssize_t cmd_store(struct device *dev, struct device_attribute *attr,
 				start = pos + 1;
 			}
 			pos++;
-		} while ((pos - buf <= length) && (param_cnt < CMD_PARAM_NUM));
+		} while (pos - buf <= length);
 	}
 
 	dev_info(&rmi4_data->i2c_client->dev, "%s: Command = %s\n",
