@@ -1829,7 +1829,7 @@ static int __devexit cypress_touchkey_remove(struct i2c_client *client)
 	return 0;
 }
 
-#ifdef CONFIG_FB
+#ifdef CONFIG_PM
 static int cypress_touchkey_suspend(struct device *dev)
 {
 	struct i2c_client *client = to_i2c_client(dev);
