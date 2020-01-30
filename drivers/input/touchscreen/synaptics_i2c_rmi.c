@@ -139,11 +139,19 @@ static int synaptics_rmi4_i2c_write(struct synaptics_rmi4_data *rmi4_data,
 
 static int synaptics_rmi4_reinit_device(struct synaptics_rmi4_data *rmi4_data);
 
-#ifdef CONFIG_FB
+#ifdef CONFIG_PM
+static ssize_t synaptics_rmi4_full_pm_cycle_show(struct device *dev,
+                struct device_attribute *attr, char *buf);
+
+static ssize_t synaptics_rmi4_full_pm_cycle_store(struct device *dev,
+                struct device_attribute *attr, const char *buf, size_t count);
+
 static int synaptics_rmi4_suspend(struct device *dev);
 
 static int synaptics_rmi4_resume(struct device *dev);
+#endif
 
+#ifdef CONFIG_FB
 static int fb_notifier_callback(struct notifier_block *self,
 		unsigned long event, void *rmi4_data);
 #endif
@@ -532,19 +540,24 @@ struct synaptics_rmi4_exp_fn {
 };
 
 static struct device_attribute attrs[] = {
+#ifdef CONFIG_PM
+	__ATTR(full_pm_cycle, S_IRUGO | S_IWUSR | S_IWGRP,
+			synaptics_rmi4_full_pm_cycle_show,
+			synaptics_rmi4_full_pm_cycle_store),
+#endif
 #ifdef PROXIMITY
-	__ATTR(proximity_enables, (S_IRUGO | S_IWUSR | S_IWGRP),
+	__ATTR(proximity_enables, S_IRUGO | S_IWUSR | S_IWGRP,
 			synaptics_rmi4_f51_enables_show,
 			synaptics_rmi4_f51_enables_store),
 #endif
-	__ATTR(glove_enable, (S_IRUGO | S_IWUSR | S_IWGRP),
+	__ATTR(glove_enable, S_IRUGO | S_IWUSR | S_IWGRP,
 			synaptics_rmi4_glove_enable_show,
 			synaptics_rmi4_glove_enable_store),
 	__ATTR(device_status, S_IRUGO,
 			synaptics_rmi4_show_device_status,
 			synaptics_rmi4_store_error),
-	__ATTR(reset, S_IWUSR | S_IWGRP,
-			synaptics_rmi4_show_error,
+	__ATTR(reset, S_IRUGO | S_IWGRP,
+			NULL,
 			synaptics_rmi4_f01_reset_store),
 	__ATTR(productinfo, S_IRUGO,
 			synaptics_rmi4_f01_productinfo_show,
@@ -555,7 +568,7 @@ static struct device_attribute attrs[] = {
 	__ATTR(flashprog, S_IRUGO,
 			synaptics_rmi4_f01_flashprog_show,
 			synaptics_rmi4_store_error),
-	__ATTR(0dbutton, (S_IRUGO | S_IWUSR | S_IWGRP),
+	__ATTR(0dbutton, S_IRUGO | S_IWUSR | S_IWGRP,
 			synaptics_rmi4_0dbutton_show,
 			synaptics_rmi4_0dbutton_store),
 };
@@ -564,6 +577,31 @@ static struct list_head exp_fn_list;
 
 #ifdef PROXIMITY
 static struct synaptics_rmi4_f51_handle *f51;
+#endif
+
+#ifdef CONFIG_PM
+static ssize_t synaptics_rmi4_full_pm_cycle_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct synaptics_rmi4_data *rmi4_data = dev_get_drvdata(dev);
+
+	return snprintf(buf, PAGE_SIZE, "%u\n",
+			rmi4_data->full_pm_cycle);
+}
+
+static ssize_t synaptics_rmi4_full_pm_cycle_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	unsigned int input;
+	struct synaptics_rmi4_data *rmi4_data = dev_get_drvdata(dev);
+
+	if (sscanf(buf, "%u", &input) != 1)
+		return -EINVAL;
+
+	rmi4_data->full_pm_cycle = input > 0 ? 1 : 0;
+
+	return count;
+}
 #endif
 
 #ifdef PROXIMITY
@@ -3930,7 +3968,7 @@ static void synaptics_rmi4_input_close(struct input_dev *dev)
 }
 #endif
 
-#ifdef CONFIG_FB
+#ifdef CONFIG_PM
  /**
  * synaptics_rmi4_suspend()
  *
@@ -3989,8 +4027,15 @@ static int synaptics_rmi4_resume(struct device *dev)
 
 	if (rmi4_data->input_dev->users) {
 		if (rmi4_data->touch_stopped) {
+#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
+			rmi4_data->board->hsync_onoff(false);
+#endif
 			rmi4_data->board->power(true);
 			rmi4_data->touch_stopped = false;
+			rmi4_data->current_page = MASK_8BIT;
+#if defined(CONFIG_TOUCHSCREEN_SYNAPTICS_PREVENT_HSYNC_LEAKAGE)
+			rmi4_data->board->hsync_onoff(true);
+#endif
 
 			retval = synaptics_rmi4_reinit_device(rmi4_data);
 			if (retval < 0) {
@@ -3998,6 +4043,10 @@ static int synaptics_rmi4_resume(struct device *dev)
 						"%s: Failed to reinit device\n",
 						__func__);
 			}
+
+			if (rmi4_data->ta_status)
+				synaptics_charger_conn(rmi4_data, rmi4_data->ta_status);
+
 			enable_irq(rmi4_data->i2c_client->irq);
 
 			dev_dbg(&rmi4_data->i2c_client->dev, "%s -\n", __func__);
@@ -4007,11 +4056,20 @@ static int synaptics_rmi4_resume(struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_FB_MSM_MIPI_SAMSUNG_OCTA_VIDEO_FULL_HD_PT_PANEL
+	retval = rmi4_data->board->tout1_on();
+	if (retval)
+		dev_err(&rmi4_data->i2c_client->dev,
+				"%s: touch_tout1_on failed\n", __func__);
+#endif
+
 	mutex_unlock(&rmi4_data->input_dev->mutex);
 
 	return 0;
 }
+#endif
 
+#ifdef CONFIG_FB
 static int fb_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data)
 {
