@@ -88,9 +88,6 @@ struct tvec_base {
 struct tvec_base boot_tvec_bases;
 EXPORT_SYMBOL(boot_tvec_bases);
 static DEFINE_PER_CPU(struct tvec_base *, tvec_bases) = &boot_tvec_bases;
-#ifdef CONFIG_MACH_JF
-static DEFINE_PER_CPU(int, tvec_base_lock_init) = {-1};
-#endif
 
 /* Functions below help us manage 'deferrable' flag */
 static inline unsigned int tbase_get_deferrable(struct tvec_base *base)
@@ -1661,9 +1658,6 @@ static int __cpuinit init_timers_cpu(int cpu)
 	int j;
 	struct tvec_base *base;
 	static char __cpuinitdata tvec_base_done[NR_CPUS];
-#ifdef CONFIG_MACH_JF
-	int *lock_init = &per_cpu(tvec_base_lock_init, cpu);
-#endif
 
 	if (!tvec_base_done[cpu]) {
 		static char boot_done;
@@ -1695,27 +1689,19 @@ static int __cpuinit init_timers_cpu(int cpu)
 			boot_done = 1;
 			base = &boot_tvec_bases;
 		}
-#ifndef CONFIG_MACH_JF
 		spin_lock_init(&base->lock);
-#endif
 		tvec_base_done[cpu] = 1;
 	} else {
 		base = per_cpu(tvec_bases, cpu);
 	}
 
-#ifdef CONFIG_MACH_JF
-	if ((*lock_init) != cpu) {
-		*lock_init = cpu;
-		spin_lock_init(&base->lock);
-		printk(KERN_INFO "tvec base lock initialized for cpu%d\n", cpu);
-	}
-#endif
 	for (j = 0; j < TVN_SIZE; j++) {
 		INIT_LIST_HEAD(base->tv5.vec + j);
 		INIT_LIST_HEAD(base->tv4.vec + j);
 		INIT_LIST_HEAD(base->tv3.vec + j);
 		INIT_LIST_HEAD(base->tv2.vec + j);
 	}
+
 	for (j = 0; j < TVR_SIZE; j++)
 		INIT_LIST_HEAD(base->tv1.vec + j);
 
