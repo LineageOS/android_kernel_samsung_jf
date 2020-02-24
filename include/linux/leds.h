@@ -13,6 +13,7 @@
 #define __LINUX_LEDS_H_INCLUDED
 
 #include <linux/list.h>
+#include <linux/mutex.h>
 #include <linux/spinlock.h>
 #include <linux/rwsem.h>
 #include <linux/timer.h>
@@ -74,6 +75,9 @@ struct led_classdev {
 	struct list_head	 trig_list;
 	void			*trigger_data;
 #endif
+
+	/* Ensures consistent access to the LED Flash Class device */
+	struct mutex		led_access;
 };
 
 extern int led_classdev_register(struct device *parent,
