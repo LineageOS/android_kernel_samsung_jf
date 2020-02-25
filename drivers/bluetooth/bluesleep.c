@@ -120,7 +120,7 @@ DECLARE_DELAYED_WORK(bluesleep_abnormal_stop_workqueue, bluesleep_abnormal_stop_
 #define bluesleep_abnormal_stop()     schedule_delayed_work(&bluesleep_abnormal_stop_workqueue, 0)
 
 /* 10 second timeout */
-#define TX_TIMER_INTERVAL  3
+#define TX_TIMER_INTERVAL  10
 
 /* state variable names and bit positions */
 #define BT_PROTO	 0x01
