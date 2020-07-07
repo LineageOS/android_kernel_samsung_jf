@@ -383,14 +383,14 @@ void max77693_muic_mhl_cb(int attached)
 		/*MHL_On(1);*/ /* GPIO_LEVEL_HIGH */
 		pr_info("MHL Attached !!\n");
 #ifdef CONFIG_VIDEO_MHL_V2
-		wake_lock(&max77693_muic.mhl_wake_lock);
+		__pm_stay_awake(&max77693_muic.mhl_ws);
 		acc_notify(1);
 #endif
 	} else {
 		/*MHL_On(0);*/ /* GPIO_LEVEL_LOW */
 		pr_info("MHL Detached !!\n");
 #ifdef CONFIG_VIDEO_MHL_V2
-		wake_unlock(&max77693_muic.mhl_wake_lock);
+		__pm_relax(&max77693_muic.mhl_ws);
 		acc_notify(0);
 #endif
 	}

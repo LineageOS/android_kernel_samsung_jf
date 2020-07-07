@@ -22,7 +22,6 @@
 
 #include <linux/battery/sec_charging_common.h>
 #include <linux/hrtimer.h>
-#include <linux/wakelock.h>
 #include <linux/workqueue.h>
 #include <linux/proc_fs.h>
 #include <linux/jiffies.h>
@@ -65,11 +64,11 @@ struct sec_battery_info {
 	struct adc_sample_info	adc_sample[ADC_CH_COUNT];
 
 	/* keep awake until monitor is done */
-	struct wake_lock monitor_wake_lock;
+	struct wakeup_source monitor_ws;
 	struct workqueue_struct *monitor_wqueue;
 	struct work_struct monitor_work;
 #ifdef CONFIG_SAMSUNG_BATTERY_FACTORY
-	struct wake_lock lpm_wake_lock;
+	struct wakeup_source lpm_ws;
 #endif
 	unsigned int polling_count;
 	unsigned int polling_time;
@@ -119,9 +118,9 @@ struct sec_battery_info {
 	bool is_recharging;
 	int cable_type;
 	int extended_cable_type;
-	struct wake_lock cable_wake_lock;
+	struct wakeup_source cable_ws;
 	struct work_struct cable_work;
-	struct wake_lock vbus_wake_lock;
+	struct wakeup_source vbus_ws;
 	unsigned int full_check_cnt;
 	unsigned int recharge_check_cnt;
 

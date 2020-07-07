@@ -29,7 +29,6 @@
 #define CONFIG_SII9234_RCP		1
 #include <linux/input.h>
 #endif
-#include <linux/wakelock.h>
 #include <linux/switch.h>
 /*Flag for MHL Factory test*/
 #define MHL_SS_FACTORY			1
@@ -491,7 +490,7 @@ struct sii9234_data {
 	struct work_struct		redetect_work;
 	struct work_struct		rgnd_work;
 	struct work_struct		mhl_cbus_write_stat_work;
-	struct wake_lock                mhl_wake_lock;
+	struct wakeup_source		mhl_ws;
 	struct switch_dev		mhl_event_switch;
 };
 

@@ -2598,7 +2598,7 @@ static int __devinit max77693_muic_probe(struct platform_device *pdev)
 	/* init jig state */
 	max77693_update_jig_state(info);
 #ifdef CONFIG_VIDEO_MHL_V2
-	wake_lock_init(&info->muic_data->mhl_wake_lock, WAKE_LOCK_SUSPEND, "mhl_wake");
+	wakeup_source_init(&info->muic_data->mhl_ws, "mhl_wake");
 #endif
 	/* initial cable detection */
 	INIT_DELAYED_WORK(&info->dock_work, max77693_muic_dock_detect);

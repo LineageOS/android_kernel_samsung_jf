@@ -30,6 +30,7 @@
 #include <linux/slab.h>
 #include <linux/mfd/pm8xxx/batt-alarm.h>
 #include <linux/ratelimit.h>
+#include <linux/wakelock.h>
 
 #include <mach/msm_xo.h>
 #include <mach/msm_hsusb.h>

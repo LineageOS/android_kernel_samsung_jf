@@ -498,7 +498,7 @@ static bool sec_bat_battery_cable_check(struct sec_battery_info *battery)
 		SEC_BATTERY_CABLE_CHECK_POLLING) {
 		if (sec_bat_get_cable_type(battery,
 			battery->pdata->cable_source_type)) {
-			wake_lock(&battery->cable_wake_lock);
+			__pm_stay_awake(&battery->cable_ws);
 			queue_work(battery->monitor_wqueue,
 				&battery->cable_work);
 		}
@@ -558,7 +558,7 @@ static bool sec_bat_ovp_uvlo_result(
 			battery->is_recharging = false;
 			/* Take the wakelock during 10 seconds
 			   when over-voltage status is detected	 */
-			wake_lock_timeout(&battery->vbus_wake_lock, HZ * 10);
+			__pm_wakeup_event(&battery->vbus_ws, HZ * 10);
 			break;
 		}
 		power_supply_changed(&battery->psy_bat);
@@ -1425,7 +1425,7 @@ static void sec_bat_do_fullcharged(
 	 * activated wake lock in a few seconds
 	 */
 	if (battery->pdata->polling_type == SEC_BATTERY_MONITOR_ALARM)
-		wake_lock_timeout(&battery->vbus_wake_lock, HZ * 10);
+		__pm_wakeup_event(&battery->vbus_ws, HZ * 10);
 }
 
 static bool sec_bat_fullcharged_check(
@@ -1618,7 +1618,7 @@ static void sec_bat_polling_work(struct work_struct *work)
 	struct sec_battery_info *battery = container_of(
 		work, struct sec_battery_info, polling_work.work);
 
-	wake_lock(&battery->monitor_wake_lock);
+	__pm_stay_awake(&battery->monitor_ws);
 	queue_work(battery->monitor_wqueue, &battery->monitor_work);
 	dev_dbg(battery->dev, "%s: Activated\n", __func__);
 }
@@ -1648,7 +1648,7 @@ enum hrtimer_restart sec_bat_alarm(struct hrtimer *timer)
 	 * do NOT queue monitor work in wake up by polling alarm
 	 */
 	if (!battery->polling_in_sleep) {
-		wake_lock(&battery->monitor_wake_lock);
+		__pm_stay_awake(&battery->monitor_ws);
 		queue_work(battery->monitor_wqueue, &battery->monitor_work);
 		dev_dbg(battery->dev, "%s: Activated\n", __func__);
 	}
@@ -1892,7 +1892,7 @@ skip_monitor:
 	max77693_muic_monitor_status();
 #endif
 
-	wake_unlock(&battery->monitor_wake_lock);
+	__pm_relax(&battery->monitor_ws);
 
 	dev_dbg(battery->dev, "%s: End\n", __func__);
 
@@ -1912,7 +1912,7 @@ static void sec_bat_cable_work(struct work_struct *work)
 	 * if cable is connected and disconnected,
 	 * activated wake lock in a few seconds
 	 */
-	wake_lock_timeout(&battery->vbus_wake_lock, HZ * 5);
+	__pm_wakeup_event(&battery->vbus_ws, HZ * 5);
 
 	if (battery->cable_type == POWER_SUPPLY_TYPE_BATTERY ||
 		((battery->pdata->cable_check_type &
@@ -1951,7 +1951,7 @@ static void sec_bat_cable_work(struct work_struct *work)
 
 		/* No need for wakelock in Alarm */
 		if (battery->pdata->polling_type != SEC_BATTERY_MONITOR_ALARM)
-			wake_lock(&battery->vbus_wake_lock);
+			__pm_stay_awake(&battery->vbus_ws);
 	}
 
 	/* polling time should be reset when cable is changed
@@ -1976,13 +1976,13 @@ static void sec_bat_cable_work(struct work_struct *work)
 
 	battery->polling_count = 1;	/* initial value = 1 */
 
-	wake_lock(&battery->monitor_wake_lock);
+	__pm_stay_awake(&battery->monitor_ws);
 	queue_work(battery->monitor_wqueue, &battery->monitor_work);
 end_of_cable_work:
 #if defined(CONFIG_MACH_JACTIVE_ATT)
 	if(battery->cable_type == POWER_SUPPLY_TYPE_BATTERY)
 #endif
-	wake_unlock(&battery->cable_wake_lock);
+	__pm_relax(&battery->cable_ws);
 	dev_dbg(battery->dev, "%s: End\n", __func__);
 }
 
@@ -2415,7 +2415,7 @@ ssize_t sec_bat_store_attrs(
 	case TEST_MODE:
 		if (sscanf(buf, "%d\n", &x) == 1) {
 			battery->test_activated = x; // ? true : false;
-			wake_lock(&battery->monitor_wake_lock);
+			__pm_stay_awake(&battery->monitor_ws);
 			queue_work(battery->monitor_wqueue,
 					&battery->monitor_work);
 			ret = count;
@@ -2714,7 +2714,7 @@ static int sec_bat_set_property(struct power_supply *psy,
 				battery->pdata->check_cable_result_callback(
 					battery->cable_type);
 
-				wake_lock(&battery->cable_wake_lock);
+				__pm_stay_awake(&battery->cable_ws);
 				queue_work(battery->monitor_wqueue,
 					&battery->cable_work);
 			} else {
@@ -2726,7 +2726,7 @@ static int sec_bat_set_property(struct power_supply *psy,
 		} else {
 			if (sec_bat_get_cable_type(battery,
 				battery->pdata->cable_source_type)) {
-				wake_lock(&battery->cable_wake_lock);
+				__pm_stay_awake(&battery->cable_ws);
 				queue_work(battery->monitor_wqueue,
 					&battery->cable_work);
 			}
@@ -2957,13 +2957,13 @@ static int sec_ps_set_property(struct power_supply *psy,
 			battery->ps_changed = true;
 			dev_info(battery->dev,
 					"%s: power sharing cable plugin (%d)\n", __func__, battery->ps_status);
-			wake_lock(&battery->monitor_wake_lock);
+			__pm_stay_awake(&battery->monitor_ws);
 			queue_work(battery->monitor_wqueue, &battery->monitor_work);
 		} else {
 			battery->ps_status = false;
 			dev_info(battery->dev,
 					"%s: power sharing cable plugout (%d)\n", __func__, battery->ps_status);
-			wake_lock(&battery->monitor_wake_lock);
+			__pm_stay_awake(&battery->monitor_ws);
 			queue_work(battery->monitor_wqueue, &battery->monitor_work);
 		}
 			break;
@@ -3033,7 +3033,7 @@ static irqreturn_t sec_bat_irq_thread(int irq, void *irq_data)
 		else {
 			if (sec_bat_get_cable_type(battery,
 				battery->pdata->cable_source_type)) {
-				wake_lock(&battery->cable_wake_lock);
+				__pm_stay_awake(&battery->cable_ws);
 				queue_work(battery->monitor_wqueue,
 					&battery->cable_work);
 			}
@@ -3045,7 +3045,7 @@ no_cable_check:
 		SEC_BATTERY_CHECK_INT) {
 		battery->present = battery->pdata->check_battery_callback();
 
-		wake_lock(&battery->monitor_wake_lock);
+		__pm_stay_awake(&battery->monitor_ws);
 		queue_work(battery->monitor_wqueue, &battery->monitor_work);
 	}
 
@@ -3076,12 +3076,9 @@ static int __devinit sec_battery_probe(struct platform_device *pdev)
 	for (i = 0; i < SEC_BAT_ADC_CHANNEL_FULL_CHECK; i++)
 		adc_init(pdev, pdata, i);
 
-	wake_lock_init(&battery->monitor_wake_lock, WAKE_LOCK_SUSPEND,
-		       "sec-battery-monitor");
-	wake_lock_init(&battery->cable_wake_lock, WAKE_LOCK_SUSPEND,
-		       "sec-battery-cable");
-	wake_lock_init(&battery->vbus_wake_lock, WAKE_LOCK_SUSPEND,
-		       "sec-battery-vbus");
+	wakeup_source_init(&battery->monitor_ws, "sec-battery-monitor");
+	wakeup_source_init(&battery->cable_ws, "sec-battery-cable");
+	wakeup_source_init(&battery->vbus_ws, "sec-battery-vbus");
 
 	/* initialization of battery info */
 	battery->status = POWER_SUPPLY_STATUS_DISCHARGING;
@@ -3251,7 +3248,7 @@ static int __devinit sec_battery_probe(struct platform_device *pdev)
 		goto err_req_irq;
 	}
 
-	wake_lock(&battery->monitor_wake_lock);
+	__pm_stay_awake(&battery->monitor_ws);
 	queue_work(battery->monitor_wqueue, &battery->monitor_work);
 
 	pdata->initial_check();
@@ -3267,9 +3264,8 @@ static int __devinit sec_battery_probe(struct platform_device *pdev)
 #ifdef CONFIG_SAMSUNG_BATTERY_FACTORY
 	/* do not sleep in lpm mode & factory mode */
 	if (battery->pdata->is_lpm()) {
-		wake_lock_init(&battery->lpm_wake_lock, WAKE_LOCK_SUSPEND,
-				"sec-lpm-monitor");
-		wake_lock(&battery->lpm_wake_lock);
+		wakeup_source_init(&battery->lpm_ws, "sec-lpm-monitor");
+		__pm_stay_awake(&battery->lpm_ws);
 	}
 #endif
 
@@ -3292,9 +3288,9 @@ err_supply_unreg_ps:
 err_workqueue:
 	destroy_workqueue(battery->monitor_wqueue);
 err_wake_lock:
-	wake_lock_destroy(&battery->monitor_wake_lock);
-	wake_lock_destroy(&battery->cable_wake_lock);
-	wake_lock_destroy(&battery->vbus_wake_lock);
+	wakeup_source_trash(&battery->monitor_ws);
+	wakeup_source_trash(&battery->cable_ws);
+	wakeup_source_trash(&battery->vbus_ws);
 	mutex_destroy(&battery->adclock);
 	kfree(battery);
 
@@ -3322,9 +3318,9 @@ static int __devexit sec_battery_remove(struct platform_device *pdev)
 	hrtimer_cancel(&battery->event_termination_hrtimer);
 	flush_workqueue(battery->monitor_wqueue);
 	destroy_workqueue(battery->monitor_wqueue);
-	wake_lock_destroy(&battery->monitor_wake_lock);
-	wake_lock_destroy(&battery->cable_wake_lock);
-	wake_lock_destroy(&battery->vbus_wake_lock);
+	wakeup_source_trash(&battery->monitor_ws);
+	wakeup_source_trash(&battery->cable_ws);
+	wakeup_source_trash(&battery->vbus_ws);
 
 	mutex_destroy(&battery->adclock);
 	for (i = 0; i < SEC_BAT_ADC_CHANNEL_FULL_CHECK; i++)
@@ -3398,7 +3394,7 @@ static void sec_battery_complete(struct device *dev)
 	if (battery->pdata->polling_type == SEC_BATTERY_MONITOR_ALARM)
 		hrtimer_cancel(&battery->polling_hrtimer);
 
-	wake_lock(&battery->monitor_wake_lock);
+	__pm_stay_awake(&battery->monitor_ws);
 	queue_work(battery->monitor_wqueue,
 		&battery->monitor_work);
 

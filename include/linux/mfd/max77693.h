@@ -145,7 +145,7 @@ struct max77693_muic_data {
 	int sw_path;
 	int uart_path;
 #ifdef CONFIG_VIDEO_MHL_V2
-	struct wake_lock mhl_wake_lock;
+	struct wakeup_source mhl_ws;
 #endif
 	void (*jig_state) (int jig_state);
 

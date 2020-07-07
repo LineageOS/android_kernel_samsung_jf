@@ -201,7 +201,7 @@ u8 mhl_onoff_ex(bool onoff)
 		sii9234->pdata->mhl_sel(onoff);
 
 	if (onoff) {
-		wake_lock(&sii9234->mhl_wake_lock);
+		__pm_stay_awake(&sii9234->mhl_ws);
 		if (sii9234->pdata->hw_onoff)
 			sii9234->pdata->hw_onoff(1);
 
@@ -220,7 +220,7 @@ u8 mhl_onoff_ex(bool onoff)
 		pr_debug("sii9234_data: %s MHL switch event sent :0\n", __func__);
 		switch_set_state(&sii9234->mhl_event_switch, 0);
 	}
-		wake_unlock(&sii9234->mhl_wake_lock);
+		__pm_relax(&sii9234->mhl_ws);
 		sii9234_cancel_callback();
 
 		if (sii9234->pdata->hw_onoff)
@@ -3105,8 +3105,7 @@ static int __devinit sii9234_mhl_tx_i2c_probe(struct i2c_client *client,
 		goto err_exit2b;
 	}
 #endif
-	wake_lock_init(&sii9234->mhl_wake_lock,
-                        WAKE_LOCK_SUSPEND, "mhl_wake_lock");
+	wakeup_source_init(&sii9234->mhl_ws, "mhl_wake_lock");
 
 	sii9234->cbus_pkt.command = CBUS_IDLE;
 	sii9234->cbus_pkt.offset = DEVCAP_DEV_STATE;
