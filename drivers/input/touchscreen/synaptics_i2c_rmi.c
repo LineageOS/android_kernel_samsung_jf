@@ -4075,16 +4075,16 @@ static int fb_notifier_callback(struct notifier_block *self,
 {
 	struct fb_event *evdata = data;
 	int *blank;
-	struct synaptics_rmi4_data *synaptics_rmi4_ts_data =
+	struct synaptics_rmi4_data *rmi4_data =
 		container_of(self, struct synaptics_rmi4_data, fb_notif);
 
 	if (evdata && evdata->data && event == FB_EVENT_BLANK &&
-		synaptics_rmi4_ts_data && synaptics_rmi4_ts_data->i2c_client) {
+		rmi4_data && rmi4_data->i2c_client) {
 		blank = evdata->data;
 		if (*blank == FB_BLANK_UNBLANK)
-			synaptics_rmi4_resume(&synaptics_rmi4_ts_data->i2c_client->dev);
+			synaptics_rmi4_resume(&rmi4_data->input_dev->dev);
 		else if (*blank == FB_BLANK_POWERDOWN)
-			synaptics_rmi4_suspend(&synaptics_rmi4_ts_data->i2c_client->dev);
+			synaptics_rmi4_suspend(&rmi4_data->input_dev->dev);
 	}
 
 	return 0;

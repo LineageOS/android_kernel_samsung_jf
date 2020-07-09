@@ -1804,7 +1804,9 @@ err_gpio_request:
 err_reg_input_dev:
 	input_free_device(input_dev);
 	input_dev = NULL;
+	mutex_destroy(&info->lock);
 	mutex_destroy(&info->touchkey_led_mutex);
+
 err_input_dev_alloc:
 	kfree(info);
 	return -ENXIO;
@@ -1821,6 +1823,7 @@ static int __devexit cypress_touchkey_remove(struct i2c_client *client)
 #endif
 	if (info->irq >= 0)
 		free_irq(info->irq, info);
+	mutex_destroy(&info->lock);
 	mutex_destroy(&info->touchkey_led_mutex);
 	led_classdev_unregister(&info->leds);
 	input_unregister_device(info->input_dev);
@@ -1923,16 +1926,16 @@ static int fb_notifier_callback(struct notifier_block *self,
 {
 	struct fb_event *evdata = data;
 	int *blank;
-	struct cypress_touchkey_info *cypress_touchkey_tk_data =
+	struct cypress_touchkey_info *info =
 		container_of(self, struct cypress_touchkey_info, fb_notif);
 
 	if (evdata && evdata->data && event == FB_EVENT_BLANK &&
-		cypress_touchkey_tk_data && cypress_touchkey_tk_data->client) {
+		info && info->client) {
 		blank = evdata->data;
 		if (*blank == FB_BLANK_UNBLANK)
-			cypress_touchkey_resume(&cypress_touchkey_tk_data->client->dev);
+			cypress_touchkey_resume(&info->input_dev->dev);
 		else if (*blank == FB_BLANK_POWERDOWN)
-			cypress_touchkey_suspend(&cypress_touchkey_tk_data->client->dev);
+			cypress_touchkey_suspend(&info->input_dev->dev);
 	}
 
 	return 0;
