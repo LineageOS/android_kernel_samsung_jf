@@ -39,6 +39,7 @@ int iterate_dir(struct file *file, struct dir_context *ctx)
 	if (!IS_DEADDIR(inode)) {
 		if (file->f_op->iterate) {
 			ctx->pos = file->f_pos;
+			ctx->romnt = (inode->i_sb->s_flags & MS_RDONLY);
 			res = file->f_op->iterate(file, ctx);
 			file->f_pos = ctx->pos;
 		} else {
@@ -129,7 +130,6 @@ SYSCALL_DEFINE3(old_readdir, unsigned int, fd,
 	struct readdir_callback buf = {
 		.ctx.actor = fillonedir,
 		.dirent = dirent
-		.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
 	};
 
 	error = -EBADF;
@@ -222,7 +222,6 @@ SYSCALL_DEFINE3(getdents, unsigned int, fd,
 		.ctx.actor = filldir,
 		.count = count,
 		.current_dir = dirent
-		.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
 	};
 	int error;
 
@@ -309,7 +308,6 @@ SYSCALL_DEFINE3(getdents64, unsigned int, fd,
 		.ctx.actor = filldir64,
 		.count = count,
 		.current_dir = dirent
-		.romnt = (file->f_path.dentry->d_sb->s_flags & MS_RDONLY);
 	};
 	int error;
 
