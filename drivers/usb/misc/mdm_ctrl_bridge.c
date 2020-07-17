@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -25,6 +25,10 @@
 #include <linux/termios.h>
 #include <asm/unaligned.h>
 #include <mach/usb_bridge.h>
+
+/* polling interval for Interrupt ep */
+#define HS_INTERVAL		7
+#define FS_LS_INTERVAL		3
 
 #define ACM_CTRL_DTR		(1 << 0)
 #define DEFAULT_READ_URB_LENGTH	4096
@@ -715,7 +719,8 @@ ctrl_bridge_probe(struct usb_interface *ifc, struct usb_host_endpoint *int_in,
 		goto free_inturb;
 	}
 
-	interval = int_in->desc.bInterval;
+	interval =
+		(udev->speed == USB_SPEED_HIGH) ? HS_INTERVAL : FS_LS_INTERVAL;
 
 	usb_fill_int_urb(dev->inturb, udev, dev->int_pipe,
 				dev->intbuf, wMaxPacketSize,
