@@ -125,7 +125,6 @@ struct msm_hsusb_platform_data msm_hsusb_pdata = {
 
 #ifdef CONFIG_USB_FUNCTION
 static struct usb_mass_storage_platform_data mass_storage_pdata = {
-	.nluns = 1,
 	.buf_size = 16384,
 	.vendor = "HTC     ",
 	.product = "Android Phone   ",
@@ -149,7 +148,6 @@ static struct android_usb_platform_data android_usb_pdata = {
 	.version	= 0x0100,
 	.product_name	= "Android Phone",
 	.manufacturer_name = "HTC",
-	.nluns = 1,
 };
 
 static struct platform_device android_usb_device = {
