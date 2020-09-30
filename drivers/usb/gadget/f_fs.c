@@ -935,29 +935,6 @@ static long ffs_epfile_ioctl(struct file *file, unsigned code,
 		case FUNCTIONFS_ENDPOINT_REVMAP:
 			ret = epfile->ep->num;
 			break;
-		case FUNCTIONFS_ENDPOINT_DESC:
-		{
-			int desc_idx;
-			struct usb_endpoint_descriptor *desc;
-
-			switch (epfile->ffs->gadget->speed) {
-			case USB_SPEED_SUPER:
-				desc_idx = 2;
-				break;
-			case USB_SPEED_HIGH:
-				desc_idx = 1;
-				break;
-			default:
-				desc_idx = 0;
-			}
-			desc = epfile->ep->descs[desc_idx];
-
-			spin_unlock_irq(&epfile->ffs->eps_lock);
-			ret = copy_to_user((void *)value, desc, sizeof(*desc));
-			if (ret)
-				ret = -EFAULT;
-				return ret;
-			}
 		default:
 			ret = -ENOTTY;
 		}
@@ -1520,7 +1497,21 @@ static int functionfs_bind_config(struct usb_composite_dev *cdev,
 
 static void ffs_func_free(struct ffs_function *func)
 {
+	struct ffs_ep *ep         = func->eps;
+	unsigned count            = func->ffs->eps_count;
+	unsigned long flags;
+
 	ENTER();
+
+	/* cleanup after autoconfig */
+	spin_lock_irqsave(&func->ffs->eps_lock, flags);
+	do {
+		if (ep->ep && ep->req)
+			usb_ep_free_request(ep->ep, ep->req);
+		ep->req = NULL;
+		++ep;
+	} while (--count);
+	spin_unlock_irqrestore(&func->ffs->eps_lock, flags);
 
 	ffs_data_put(func->ffs);
 
@@ -1566,7 +1557,12 @@ static int ffs_func_eps_enable(struct ffs_function *func)
 	spin_lock_irqsave(&func->ffs->eps_lock, flags);
 	do {
 		struct usb_endpoint_descriptor *ds;
-		ds = ep->descs[ep->descs[1] ? 1 : 0];
+		int desc_idx = ffs->gadget->speed == USB_SPEED_HIGH ? 1 : 0;
+		ds = ep->descs[desc_idx];
+		if (!ds) {
+			ret = -EINVAL;
+			break;
+		}
 
 		ep->ep->driver_data = ep;
 		ep->ep->desc = ds;
