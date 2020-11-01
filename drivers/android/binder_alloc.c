@@ -17,8 +17,9 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#include <asm/cacheflush.h>
 #include <linux/list.h>
-#include <linux/sched/mm.h>
+#include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/rtmutex.h>
 #include <linux/rbtree.h>
@@ -28,7 +29,6 @@
 #include <linux/sched.h>
 #include <linux/list_lru.h>
 #include <linux/ratelimit.h>
-#include <asm/cacheflush.h>
 #include <linux/uaccess.h>
 #include <linux/highmem.h>
 #include "binder_alloc.h"
@@ -216,7 +216,8 @@ static int binder_update_page_range(struct binder_alloc *alloc, int allocate,
 		}
 	}
 
-	if (need_mm && mmget_not_zero(alloc->vma_vm_mm))
+	/* Same as mmget_not_zero() in later kernel versions */
+	if (need_mm && atomic_inc_not_zero(&alloc->vma_vm_mm->mm_users))
 		mm = alloc->vma_vm_mm;
 
 	if (mm) {
@@ -723,7 +724,8 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 	binder_insert_free_buffer(alloc, buffer);
 	alloc->free_async_space = alloc->buffer_size / 2;
 	binder_alloc_set_vma(alloc, vma);
-	mmgrab(alloc->vma_vm_mm);
+	/* Same as mmgrab() in later kernel versions */
+	atomic_inc(&alloc->vma_vm_mm->mm_count);
 
 	return 0;
 
@@ -912,7 +914,6 @@ void binder_alloc_vma_close(struct binder_alloc *alloc)
  * up pages when the system is under memory pressure.
  */
 enum lru_status binder_alloc_free_page(struct list_head *item,
-				       struct list_lru_one *lru,
 				       spinlock_t *lock,
 				       void *cb_arg)
 {
@@ -936,19 +937,20 @@ enum lru_status binder_alloc_free_page(struct list_head *item,
 	page_addr = (uintptr_t)alloc->buffer + index * PAGE_SIZE;
 
 	mm = alloc->vma_vm_mm;
-	if (!mmget_not_zero(mm))
+	/* Same as mmget_not_zero() in later kernel versions */
+	if (!atomic_inc_not_zero(&alloc->vma_vm_mm->mm_users))
 		goto err_mmget;
 	if (!down_read_trylock(&mm->mmap_sem))
 		goto err_down_read_mmap_sem_failed;
 	vma = binder_alloc_get_vma(alloc);
 
-	list_lru_isolate(lru, item);
+	list_del_init(item);
 	spin_unlock(lock);
 
 	if (vma) {
 		trace_binder_unmap_user_start(alloc, index);
 
-		zap_page_range(vma, page_addr, PAGE_SIZE);
+		zap_page_range(vma, page_addr, PAGE_SIZE, NULL);
 
 		trace_binder_unmap_user_end(alloc, index);
 	}
@@ -1012,16 +1014,10 @@ void binder_alloc_init(struct binder_alloc *alloc)
 	INIT_LIST_HEAD(&alloc->buffers);
 }
 
-int binder_alloc_shrinker_init(void)
+void binder_alloc_shrinker_init(void)
 {
-	int ret = list_lru_init(&binder_alloc_lru);
-
-	if (ret == 0) {
-		ret = register_shrinker(&binder_shrinker);
-		if (ret)
-			list_lru_destroy(&binder_alloc_lru);
-	}
-	return ret;
+	list_lru_init(&binder_alloc_lru);
+	register_shrinker(&binder_shrinker);
 }
 
 /**
