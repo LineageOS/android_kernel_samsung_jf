@@ -317,7 +317,7 @@ void msm_restart(char mode, const char *cmd)
 			printk(KERN_NOTICE "%s : value of cmd is NULL.\n", __func__);
 			__raw_writel(0x12345678, restart_reason);
 		} else {
-			__raw_writel(0x77665501, restart_reason);
+			__raw_writel(0x12345678, restart_reason);
 		}
 	}
 #ifdef CONFIG_LGE_CRASH_HANDLER
