@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "377e3665_6e9c903c",
+        "filename": "arch/arm/configs/lineageos_jf_defconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 537,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2020-12-02T14:59:11Z",
+      "side": 1,
+      "message": "killing this will defs help",
+      "range": {
+        "startLine": 536,
+        "startChar": 0,
+        "endLine": 537,
+        "endChar": 25
+      },
+      "revId": "f6ab551b2d782c09edc46010fe1fecf978eb3f18",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
