@@ -22,6 +22,30 @@
       "revId": "f6ab551b2d782c09edc46010fe1fecf978eb3f18",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa9061e4_6addabea",
+        "filename": "arch/arm/configs/lineageos_jf_defconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 537,
+      "author": {
+        "id": 444
+      },
+      "writtenOn": "2020-12-04T21:16:44Z",
+      "side": 1,
+      "message": "It\u0027s just a few kb\u0027s, and I kind of wanted to keep it to avoid the backlash from people using for their sdcards.",
+      "parentUuid": "377e3665_6e9c903c",
+      "range": {
+        "startLine": 536,
+        "startChar": 0,
+        "endLine": 537,
+        "endChar": 25
+      },
+      "revId": "f6ab551b2d782c09edc46010fe1fecf978eb3f18",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
     }
   ]
 }
