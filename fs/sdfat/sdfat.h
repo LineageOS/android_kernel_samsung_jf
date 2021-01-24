@@ -99,13 +99,8 @@ enum {
  * sdfat mount in-memory data
  */
 struct sdfat_mount_options {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
 	kuid_t fs_uid;
 	kgid_t fs_gid;
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0) */
-	uid_t fs_uid;
-	gid_t fs_gid;
-#endif
 	unsigned short fs_fmask;
 	unsigned short fs_dmask;
 	unsigned short allow_utime; /* permission for setting the [am]time */
