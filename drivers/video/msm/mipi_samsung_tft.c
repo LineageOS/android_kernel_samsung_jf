@@ -561,6 +561,7 @@ static ssize_t mipi_samsung_disp_set_power(struct device *dev,
 }
 #endif
 
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 int mipi_samsung_cabc_onoff ( int enable )
 {
 	struct msm_fb_data_type *mfd = NULL;
@@ -604,6 +605,7 @@ int mipi_samsung_cabc_onoff ( int enable )
 
 	return 0;
 }
+#endif
 
 static ssize_t mipi_samsung_disp_lcdtype_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -789,6 +791,7 @@ static ssize_t mipi_samsung_fps_store(struct device *dev,
 }
 #endif
 
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 static ssize_t mipi_samsung_disp_siop_show(struct device *dev,
 			struct device_attribute *attr, char *buf)
 {
@@ -824,6 +827,7 @@ static ssize_t mipi_samsung_disp_siop_store(struct device *dev,
 
 	return size;
 }
+#endif
 
 static DEVICE_ATTR(lcd_power, S_IRUGO | S_IWUSR,
 		mipi_samsung_disp_get_power,
@@ -840,9 +844,11 @@ static DEVICE_ATTR(fps_change, S_IRUGO | S_IWUSR | S_IWGRP,
 		mipi_samsung_fps_show,
 		mipi_samsung_fps_store);
 #endif
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 static DEVICE_ATTR(siop_enable, S_IRUGO | S_IWUSR | S_IWGRP,
 		mipi_samsung_disp_siop_show,
 		mipi_samsung_disp_siop_store);
+#endif
 
 #ifdef DDI_VIDEO_ENHANCE_TUNING
 #define MAX_FILE_NAME 128
@@ -1221,12 +1227,14 @@ static int __devinit mipi_samsung_disp_probe(struct platform_device *pdev)
 	}
 #endif
 
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 	ret = sysfs_create_file(&lcd_device->dev.kobj,
 					&dev_attr_siop_enable.attr);
 	if (ret) {
 		pr_info("sysfs create fail-%s\n",
 				dev_attr_siop_enable.attr.name);
 	}
+#endif
 
 	printk(KERN_INFO "[lcd] backlight_device_register for panel start\n");
 

@@ -173,6 +173,7 @@ static char renesas_display_off[] = { 0x28, /* no param */ };
 static char renesas_sleep_in[] = { 0x10, /* no param */ };
 static char renesas_sleep_out[] = { 0x11, /* no param */ };
 
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 #if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
 static char renesas_cabc_off_test[] = {
 	0xCE,
@@ -185,6 +186,7 @@ static char renesas_cabc_on_test[] = {
 	0xCE,
 	0x00,
 };
+#endif
 #endif
 static struct dsi_cmd_desc renesas_ready_to_on_cmds[] = {
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,

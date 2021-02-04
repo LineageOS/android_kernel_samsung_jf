@@ -70,6 +70,7 @@
 
 
 int play_speed_1_5;
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 #if defined(CONFIG_FB_MSM_MIPI_RENESAS_TFT_VIDEO_FULL_HD_PT_PANEL)
 #if defined (CONFIG_MACH_JACTIVE_EUR) || defined (CONFIG_MACH_JACTIVE_ATT)
 static int cabc = -1;
@@ -78,6 +79,7 @@ static int cabc = 0;
 #endif
 
 extern int mipi_samsung_cabc_onoff ( int enable );
+#endif
 #endif
 
 struct dsi_buf mdnie_tun_tx_buf;
@@ -1019,6 +1021,7 @@ static DEVICE_ATTR(accessibility, 0664,
 			accessibility_show,
 			accessibility_store);
 
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 #if defined(CONFIG_FB_MSM_MIPI_RENESAS_TFT_VIDEO_FULL_HD_PT_PANEL)
 static ssize_t cabc_show(struct device *dev,
 			struct device_attribute *attr,
@@ -1052,6 +1055,7 @@ int is_cabc_on ( void )
 static DEVICE_ATTR(cabc, 0664,
 			cabc_show,
 			cabc_store);
+#endif
 #endif
 
 static struct class *mdnie_class;
@@ -1118,11 +1122,13 @@ void init_mdnie_class(void)
 		pr_err("Failed to create device file(%s)!=n",
 			dev_attr_accessibility.attr.name);
 
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 #if defined(CONFIG_FB_MSM_MIPI_RENESAS_TFT_VIDEO_FULL_HD_PT_PANEL)
 	if (device_create_file
 		(tune_mdnie_dev, &dev_attr_cabc) < 0)
 		pr_err("Failed to create device file(%s)!=n",
 			dev_attr_cabc.attr.name);
+#endif
 #endif
 
 	mdnie_tun_state.mdnie_enable = true;

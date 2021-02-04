@@ -30,7 +30,7 @@
 #ifndef MIPI_SAMSUNG_OLED_H
 #define MIPI_SAMSUNG_OLED_H
 
-#define AUTO_BRIGHTNESS_CABC_FUNCTION
+//#define AUTO_BRIGHTNESS_CABC_FUNCTION
 
 //#include "smart_dimming.h"
 
@@ -112,7 +112,9 @@ struct mipi_panel_data {
 	int siop_status;
 };
 
+#if defined(AUTO_BRIGHTNESS_CABC_FUNCTION)
 int mipi_samsung_cabc_onoff ( int enable );
+#endif
 int mipi_samsung_tft_device_register(struct msm_panel_info *pinfo,
 					u32 channel, u32 panel,
 					struct mipi_panel_data *mpd);
