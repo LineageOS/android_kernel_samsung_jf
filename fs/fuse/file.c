@@ -992,7 +992,7 @@ static ssize_t fuse_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
 	struct iov_iter i;
 	loff_t endbyte = 0;
 
-	BUG_ON(iocb->ki_pos != pos);
+	WARN_ON(iocb->ki_pos != pos);
 
 	ocount = 0;
 	err = generic_segment_checks(iov, &nr_segs, &ocount, VERIFY_READ);
