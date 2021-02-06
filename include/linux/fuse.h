@@ -174,8 +174,6 @@ struct fuse_file_lock {
 #define FUSE_DONT_MASK		(1 << 6)
 #define FUSE_FLOCK_LOCKS	(1 << 10)
 
-#define FUSE_SHORTCIRCUIT	(1 << 31)
-
 /**
  * CUSE INIT request/reply flags
  *
@@ -397,7 +395,7 @@ struct fuse_create_in {
 struct fuse_open_out {
 	__u64	fh;
 	__u32	open_flags;
-	int32_t	lower_fd; /* lower layer file descriptor */
+	__u32	padding;
 };
 
 struct fuse_release_in {
