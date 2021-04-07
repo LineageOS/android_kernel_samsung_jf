@@ -83,7 +83,7 @@ INT32 bdev_read(struct super_block *sb, UINT32 secno, struct buffer_head **bh, U
 
 	if (*bh) return(FFS_SUCCESS);
 
-	WARN(!p_fs->dev_ejected, 
+	WARN(!p_fs->dev_ejected,
 		"[EXFAT] No bh, device seems wrong or to be ejected.\n");
 
 	return(FFS_MEDIAERR);
@@ -105,10 +105,9 @@ INT32 bdev_write(struct super_block *sb, UINT32 secno, struct buffer_head *bh, U
 	if (!p_bd->opened) return(FFS_MEDIAERR);
 
 	if (secno == bh->b_blocknr) {
-		lock_buffer(bh);
 		set_buffer_uptodate(bh);
 		mark_buffer_dirty(bh);
-		unlock_buffer(bh);
+
 		if (sync && (sync_dirty_buffer(bh) != 0))
 			return (FFS_MEDIAERR);
 	} else {
@@ -134,7 +133,7 @@ INT32 bdev_write(struct super_block *sb, UINT32 secno, struct buffer_head *bh, U
 	return(FFS_SUCCESS);
 
 no_bh:
-	WARN(!p_fs->dev_ejected, 
+	WARN(!p_fs->dev_ejected,
 		"[EXFAT] No bh, device seems wrong or to be ejected.\n");
 
 	return (FFS_MEDIAERR);
@@ -153,4 +152,25 @@ INT32 bdev_sync(struct super_block *sb)
 	if (!p_bd->opened) return(FFS_MEDIAERR);
 
 	return sync_blockdev(sb->s_bdev);
+}
+
+INT32 bdev_reada(struct super_block *sb, UINT32 secno, UINT32 num_secs)
+{
+	BD_INFO_T *p_bd = &(EXFAT_SB(sb)->bd_info);
+	UINT32 sects_per_page = (PAGE_SIZE >> sb->s_blocksize_bits);
+	struct blk_plug plug;
+	UINT32 i;
+
+	if (!p_bd->opened)
+		return (FFS_MEDIAERR);
+
+	blk_start_plug(&plug);
+	for (i = 0; i < num_secs; i++) {
+		if (i && !(i & (sects_per_page - 1)))
+			blk_flush_plug_list(&plug, false);
+		sb_breadahead(sb, secno + i);
+	}
+	blk_finish_plug(&plug);
+
+	return 0;
 }

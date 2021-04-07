@@ -29,17 +29,17 @@ extern "C" {
 #define EXFAT_SUPER_MAGIC       (0x2011BAB0L)
 #define EXFAT_ROOT_INO          1
 
-#define FAT12                   0x01    
-#define FAT16                   0x0E    
-#define FAT32                   0x0C    
-#define EXFAT                   0x07    
+#define FAT12                   0x01
+#define FAT16                   0x0E
+#define FAT32                   0x0C
+#define EXFAT                   0x07
 
-#define MAX_CHARSET_SIZE        3       
-#define MAX_PATH_DEPTH          15      
-#define MAX_NAME_LENGTH         256     
-#define MAX_PATH_LENGTH         260     
-#define DOS_NAME_LENGTH         11      
-#define DOS_PATH_LENGTH         80      
+#define MAX_CHARSET_SIZE        3
+#define MAX_PATH_DEPTH          15
+#define MAX_NAME_LENGTH         256
+#define MAX_PATH_LENGTH         260
+#define DOS_NAME_LENGTH         11
+#define DOS_PATH_LENGTH         80
 
 #define ATTR_NORMAL             0x0000
 #define ATTR_READONLY           0x0001
@@ -74,7 +74,7 @@ extern "C" {
 #define FFS_DIRBUSY             16
 #define FFS_MEMORYERR           17
 #define FFS_NAMETOOLONG		18
-#define FFS_ERROR               19      
+#define FFS_ERROR               19
 
 	typedef struct {
 		UINT16      Year;
@@ -87,13 +87,13 @@ extern "C" {
 	} DATE_TIME_T;
 
 	typedef struct {
-		UINT32      Offset;    
-		UINT32      Size;      
+		UINT32      Offset;
+		UINT32      Size;
 	} PART_INFO_T;
 
 	typedef struct {
-		UINT32      SecSize;    
-		UINT32      DevSize;    
+		UINT32      SecSize;
+		UINT32      DevSize;
 	} DEV_INFO_T;
 
 	typedef struct {
@@ -125,7 +125,7 @@ extern "C" {
 
 	typedef struct {
 		INT8        Name[MAX_NAME_LENGTH *MAX_CHARSET_SIZE];
-		INT8        ShortName[DOS_NAME_LENGTH + 2];     
+		INT8        ShortName[DOS_NAME_LENGTH + 2];
 		UINT32      Attr;
 		UINT64      Size;
 		UINT32      NumSubdirs;
@@ -157,9 +157,10 @@ extern "C" {
 	INT32 FsCreateDir(struct inode *inode, UINT8 *path, FILE_ID_T *fid);
 	INT32 FsReadDir(struct inode *inode, DIR_ENTRY_T *dir_entry);
 	INT32 FsRemoveDir(struct inode *inode, FILE_ID_T *fid);
+	INT32 FsRemoveEntry(struct inode *inode, FILE_ID_T *fid);
 
 	INT32 FsReleaseCache(struct super_block *sb);
 #ifdef __cplusplus
 }
-#endif 
+#endif
 #endif
