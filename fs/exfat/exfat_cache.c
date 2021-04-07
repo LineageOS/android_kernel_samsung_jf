@@ -261,7 +261,7 @@ static INT32 __FAT_write(struct super_block *sb, UINT32 loc, UINT32 content)
 		if (!fat_sector)
 			return -1;
 
-		if (loc & 1) { 
+		if (loc & 1) {
 
 			content <<= 4;
 
@@ -332,7 +332,7 @@ static INT32 __FAT_write(struct super_block *sb, UINT32 loc, UINT32 content)
 		SET32_A(fat_entry, content);
 	}
 
-	else { 
+	else {
 
 		sec = p_fs->FAT1_start_sector + (loc >> (p_bd->sector_size_bits-2));
 		off = (loc << 2) & p_bd->sector_size_mask;
@@ -348,7 +348,7 @@ static INT32 __FAT_write(struct super_block *sb, UINT32 loc, UINT32 content)
 
 	FAT_modify(sb, sec);
 	return 0;
-} 
+}
 
 UINT8 *FAT_getblk(struct super_block *sb, UINT32 sec)
 {
@@ -506,7 +506,7 @@ UINT8 *buf_getblk(struct super_block *sb, UINT32 sec)
 	sm_V(&b_sem);
 
 	return(buf);
-} 
+}
 
 static UINT8 *__buf_getblk(struct super_block *sb, UINT32 sec)
 {
@@ -558,7 +558,7 @@ void buf_modify(struct super_block *sb, UINT32 sec)
 	WARN(!bp, "[EXFAT] failed to find buffer_cache(sector:%u).\n", sec);
 
 	sm_V(&b_sem);
-} 
+}
 
 void buf_lock(struct super_block *sb, UINT32 sec)
 {
@@ -723,7 +723,7 @@ static void push_to_lru(BUF_CACHE_T *bp, BUF_CACHE_T *list)
 	bp->next = list;
 	list->prev->next = bp;
 	list->prev = bp;
-} 
+}
 
 static void move_to_mru(BUF_CACHE_T *bp, BUF_CACHE_T *list)
 {
@@ -737,4 +737,32 @@ static void move_to_lru(BUF_CACHE_T *bp, BUF_CACHE_T *list)
 	bp->prev->next = bp->next;
 	bp->next->prev = bp->prev;
 	push_to_lru(bp, list);
+}
+
+INT32 buf_cache_readahead(struct super_block * sb, UINT32 sec)
+{
+	FS_INFO_T *p_fs = &(EXFAT_SB(sb)->fs_info);
+	struct buffer_head *bh;
+	UINT32 max_ra_count = DCACHE_MAX_RA_SIZE >> sb->s_blocksize_bits;
+	UINT32 page_ra_count = PAGE_SIZE >> sb->s_blocksize_bits;
+	UINT32 adj_ra_count = max(p_fs->sectors_per_clu, page_ra_count);
+	UINT32 ra_count = min(adj_ra_count, max_ra_count);
+
+	if (p_fs->sectors_per_clu == 1)
+		return 0;
+
+	if (sec < p_fs->data_start_sector)
+		return (FFS_MEDIAERR);
+
+	/* Not sector aligned with ra_count, resize ra_count to page size */
+	if ((sec - p_fs->data_start_sector) & (ra_count - 1))
+		ra_count = page_ra_count;
+
+	bh = sb_find_get_block(sb, sec);
+	if (!bh || !buffer_uptodate(bh))
+		bdev_reada(sb, sec, ra_count);
+
+	brelse(bh);
+
+	return 0;
 }
