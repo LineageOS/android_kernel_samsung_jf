@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f20b4064_45a781ff",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 31496
+      },
+      "writtenOn": "2024-04-27T03:28:07Z",
+      "side": 1,
+      "message": "Builds/boots on jfltexx. Basic functions (format, sideload, fastbootd) work as expected.",
+      "revId": "5db762d02710cb2661ea3bb0cd004855212f8138",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
